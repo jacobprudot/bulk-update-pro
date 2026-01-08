@@ -1,24 +1,31 @@
 import React from 'react';
 import { Box, Heading, Dropdown, TextField, Flex, RadioButton } from 'monday-ui-react-core';
 import { formatColumnValue } from '../../../shared/utils/mondayHelpers';
-import { getWorkspaceUsers, getLinkedBoardItems } from '../services/mondayService';
+import { getWorkspaceUsers, getLinkedBoardItems, getBoardTags } from '../services/mondayService';
 
 /**
  * Component for selecting column and defining update value
  */
-const ColumnSelector = ({ columns, selectedColumn, value, onChange, onColumnChange }) => {
+const ColumnSelector = ({ columns, selectedColumn, value, onChange, onColumnChange, boardId }) => {
   const [updateMode, setUpdateMode] = React.useState('same'); // 'same' or 'different'
   const [users, setUsers] = React.useState([]);
   const [loadingUsers, setLoadingUsers] = React.useState(false);
   const [linkedBoardItems, setLinkedBoardItems] = React.useState([]);
   const [loadingLinkedItems, setLoadingLinkedItems] = React.useState(false);
+  const [tags, setTags] = React.useState([]);
+  const [loadingTags, setLoadingTags] = React.useState(false);
   const [timelineFrom, setTimelineFrom] = React.useState('');
   const [timelineTo, setTimelineTo] = React.useState('');
+  const [weekStart, setWeekStart] = React.useState('');
+  const [weekEnd, setWeekEnd] = React.useState('');
 
-  // Load users when component mounts
+  // Load users and tags when component mounts
   React.useEffect(() => {
     loadUsers();
-  }, []);
+    if (boardId) {
+      loadTags();
+    }
+  }, [boardId]);
 
   const loadUsers = async () => {
     setLoadingUsers(true);
@@ -29,6 +36,18 @@ const ColumnSelector = ({ columns, selectedColumn, value, onChange, onColumnChan
       console.error('Error loading users:', error);
     } finally {
       setLoadingUsers(false);
+    }
+  };
+
+  const loadTags = async () => {
+    setLoadingTags(true);
+    try {
+      const boardTags = await getBoardTags(boardId);
+      setTags(boardTags);
+    } catch (error) {
+      console.error('Error loading tags:', error);
+    } finally {
+      setLoadingTags(false);
     }
   };
 
@@ -65,6 +84,13 @@ const ColumnSelector = ({ columns, selectedColumn, value, onChange, onColumnChan
     onChange({ from, to });
   };
 
+  // Handle week date changes
+  const handleWeekChange = (start, end) => {
+    setWeekStart(start);
+    setWeekEnd(end);
+    onChange({ startDate: start, endDate: end });
+  };
+
   // Filter only editable columns with proper UI support
   // Exclude read-only, calculated, and complex columns without UI implementation
   const editableColumns = columns.filter(col =>
@@ -78,30 +104,23 @@ const ColumnSelector = ({ columns, selectedColumn, value, onChange, onColumnChan
       'item_id',        // Item ID (automatic, read-only)
       'progress',       // Progress tracking (calculated, read-only)
       'time_tracking',  // Time tracking (needs complex time entry UI)
-      'world-clock',    // World clock (needs timezone picker)
+      'world-clock',    // World clock (needs timezone picker UI)
       'dependency',     // Dependency (complex relationship)
       'file',           // File upload (needs file picker UI)
       'vote',           // Vote (needs voting UI)
       'doc',            // Monday Doc (needs doc editor)
       'button',         // Button (action trigger, not data)
-      // Note: The following are now supported with proper UI:
+      'location',       // Location (needs geocoding/map picker - complex)
+      'color',          // Color picker (needs proper color picker UI)
+      'color_picker'    // Color picker (needs proper color picker UI)
+      // ✅ NOW SUPPORTED:
       // - timeline (date range picker)
       // - board-relation (item selector)
-      // - tags (will need tag selector UI - TODO)
-      // - country (will need country picker - TODO)
-      // - week (will need week picker - TODO)
-      // - hour (will need time picker - TODO)
-      // - location (will need location picker - TODO)
-      // - rating (will need rating UI - TODO)
-      // - color/color_picker (will need color picker - TODO)
-      'tags',           // Tags (needs tag selector UI)
-      'country',        // Country (needs country picker)
-      'week',           // Week (needs week picker)
-      'hour',           // Hour (needs time picker)
-      'location',       // Location (needs map/location picker)
-      'rating',         // Rating (needs rating stars UI)
-      'color',          // Color picker (needs color picker UI)
-      'color_picker'    // Color picker (needs color picker UI)
+      // - tags (tag multi-select)
+      // - country (country dropdown)
+      // - week (week range picker)
+      // - hour (time picker)
+      // - rating (star rating selector)
     ].includes(col.type)
   );
 
@@ -399,6 +418,204 @@ const ColumnSelector = ({ columns, selectedColumn, value, onChange, onColumnChan
                 ))}
               </select>
             )}
+          </Box>
+        );
+
+      case 'tags':
+        return (
+          <Box>
+            <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600, fontSize: '14px' }}>
+              Select tag
+            </label>
+            {loadingTags ? (
+              <p style={{ color: '#666', fontSize: '14px' }}>Loading tags...</p>
+            ) : tags.length === 0 ? (
+              <p style={{ color: '#666', fontSize: '14px' }}>No tags found in board</p>
+            ) : (
+              <select
+                value={value}
+                onChange={(e) => onChange(e.target.value)}
+                style={{
+                  width: '100%',
+                  padding: '8px 12px',
+                  fontSize: '14px',
+                  border: '1px solid #c5c7d0',
+                  borderRadius: '4px',
+                  backgroundColor: 'white',
+                  cursor: 'pointer'
+                }}
+              >
+                <option value="">-- Select a tag --</option>
+                {tags.map(tag => (
+                  <option key={tag.id} value={tag.id}>
+                    {tag.name}
+                  </option>
+                ))}
+              </select>
+            )}
+          </Box>
+        );
+
+      case 'country':
+        const countries = [
+          { code: 'US', name: 'United States' },
+          { code: 'GB', name: 'United Kingdom' },
+          { code: 'CA', name: 'Canada' },
+          { code: 'MX', name: 'Mexico' },
+          { code: 'BR', name: 'Brazil' },
+          { code: 'AR', name: 'Argentina' },
+          { code: 'CL', name: 'Chile' },
+          { code: 'CO', name: 'Colombia' },
+          { code: 'ES', name: 'Spain' },
+          { code: 'FR', name: 'France' },
+          { code: 'DE', name: 'Germany' },
+          { code: 'IT', name: 'Italy' },
+          { code: 'PT', name: 'Portugal' },
+          { code: 'NL', name: 'Netherlands' },
+          { code: 'BE', name: 'Belgium' },
+          { code: 'CH', name: 'Switzerland' },
+          { code: 'AT', name: 'Austria' },
+          { code: 'PL', name: 'Poland' },
+          { code: 'RU', name: 'Russia' },
+          { code: 'CN', name: 'China' },
+          { code: 'JP', name: 'Japan' },
+          { code: 'KR', name: 'South Korea' },
+          { code: 'IN', name: 'India' },
+          { code: 'AU', name: 'Australia' },
+          { code: 'NZ', name: 'New Zealand' },
+          { code: 'ZA', name: 'South Africa' },
+          { code: 'IL', name: 'Israel' }
+        ];
+
+        return (
+          <Box>
+            <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600, fontSize: '14px' }}>
+              Select country
+            </label>
+            <select
+              value={value}
+              onChange={(e) => onChange(e.target.value)}
+              style={{
+                width: '100%',
+                padding: '8px 12px',
+                fontSize: '14px',
+                border: '1px solid #c5c7d0',
+                borderRadius: '4px',
+                backgroundColor: 'white',
+                cursor: 'pointer'
+              }}
+            >
+              <option value="">-- Select a country --</option>
+              {countries.map(country => (
+                <option key={country.code} value={country.code}>
+                  {country.name}
+                </option>
+              ))}
+            </select>
+          </Box>
+        );
+
+      case 'week':
+        return (
+          <Box>
+            <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600, fontSize: '14px' }}>
+              Week range
+            </label>
+            <Flex direction="Row" gap={Flex.gaps.MEDIUM} style={{ marginBottom: '8px' }}>
+              <Box style={{ flex: 1 }}>
+                <label style={{ display: 'block', marginBottom: '4px', fontSize: '12px', color: '#666' }}>
+                  Week start date
+                </label>
+                <input
+                  type="date"
+                  value={weekStart}
+                  onChange={(e) => handleWeekChange(e.target.value, weekEnd)}
+                  style={{
+                    width: '100%',
+                    padding: '8px 12px',
+                    fontSize: '14px',
+                    border: '1px solid #c5c7d0',
+                    borderRadius: '4px',
+                    backgroundColor: 'white'
+                  }}
+                />
+              </Box>
+              <Box style={{ flex: 1 }}>
+                <label style={{ display: 'block', marginBottom: '4px', fontSize: '12px', color: '#666' }}>
+                  Week end date
+                </label>
+                <input
+                  type="date"
+                  value={weekEnd}
+                  onChange={(e) => handleWeekChange(weekStart, e.target.value)}
+                  style={{
+                    width: '100%',
+                    padding: '8px 12px',
+                    fontSize: '14px',
+                    border: '1px solid #c5c7d0',
+                    borderRadius: '4px',
+                    backgroundColor: 'white'
+                  }}
+                />
+              </Box>
+            </Flex>
+            <p style={{ fontSize: '12px', color: '#666', margin: '4px 0 0 0' }}>
+              Select start and end dates for the week (typically Monday to Sunday)
+            </p>
+          </Box>
+        );
+
+      case 'hour':
+        return (
+          <Box>
+            <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600, fontSize: '14px' }}>
+              Time
+            </label>
+            <input
+              type="time"
+              value={value}
+              onChange={(e) => onChange(e.target.value)}
+              style={{
+                width: '100%',
+                padding: '8px 12px',
+                fontSize: '14px',
+                border: '1px solid #c5c7d0',
+                borderRadius: '4px',
+                backgroundColor: 'white'
+              }}
+            />
+            <p style={{ fontSize: '12px', color: '#666', margin: '4px 0 0 0' }}>
+              Select a time in 24-hour format
+            </p>
+          </Box>
+        );
+
+      case 'rating':
+        return (
+          <Box>
+            <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600, fontSize: '14px' }}>
+              Rating
+            </label>
+            <select
+              value={value}
+              onChange={(e) => onChange(e.target.value)}
+              style={{
+                width: '100%',
+                padding: '8px 12px',
+                fontSize: '14px',
+                border: '1px solid #c5c7d0',
+                borderRadius: '4px',
+                backgroundColor: 'white',
+                cursor: 'pointer'
+              }}
+            >
+              <option value="">-- Select rating --</option>
+              <option value="1">⭐ 1 Star</option>
+              <option value="2">⭐⭐ 2 Stars</option>
+              <option value="3">⭐⭐⭐ 3 Stars</option>
+              <option value="4">⭐⭐⭐⭐ 4 Stars</option>
+              <option value="5">⭐⭐⭐⭐⭐ 5 Stars</option>
+            </select>
           </Box>
         );
 

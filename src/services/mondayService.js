@@ -169,3 +169,30 @@ export const getLinkedBoardItems = async (linkedBoardId) => {
     throw error;
   }
 };
+
+/**
+ * Obtiene los tags disponibles en un board
+ * @param {string} boardId - ID del board
+ * @returns {Promise<Array>} Lista de tags
+ */
+export const getBoardTags = async (boardId) => {
+  try {
+    const query = `query ($boardId: [ID!]) {
+      boards(ids: $boardId) {
+        tags {
+          id
+          name
+          color
+        }
+      }
+    }`;
+
+    const variables = { boardId: [boardId] };
+    const response = await monday.api(query, { variables });
+
+    return response.data.boards[0]?.tags || [];
+  } catch (error) {
+    console.error('Error obteniendo tags del board:', error);
+    throw error;
+  }
+};

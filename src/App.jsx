@@ -199,6 +199,7 @@ function App() {
               value={newValue}
               onChange={setNewValue}
               onColumnChange={setSelectedColumn}
+              boardId={context?.boardId}
             />
           )}
 
