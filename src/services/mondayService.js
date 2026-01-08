@@ -89,7 +89,7 @@ export const updateColumnValue = async (boardId, itemId, columnId, value) => {
       boardId,
       itemId,
       columnId,
-      value: JSON.stringify(value)
+      value: value // Ya viene formateado desde formatColumnValue
     };
 
     const response = await monday.api(mutation, { variables });

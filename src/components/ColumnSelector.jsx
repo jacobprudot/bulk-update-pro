@@ -61,18 +61,34 @@ const ColumnSelector = ({ columns, selectedColumn, value, onChange, onColumnChan
       case 'status':
         const settings = selectedColumnData.settings_str ?
           JSON.parse(selectedColumnData.settings_str) : {};
-        const statusOptions = Object.keys(settings.labels || {}).map(key => ({
-          value: settings.labels[key],
-          label: settings.labels[key]
-        }));
+        const statusLabels = settings.labels || {};
 
         return (
-          <Dropdown
-            placeholder="Select a status"
-            options={statusOptions}
-            value={value}
-            onChange={(option) => onChange(option.value)}
-          />
+          <Box>
+            <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600, fontSize: '14px' }}>
+              New status value
+            </label>
+            <select
+              value={value}
+              onChange={(e) => onChange(e.target.value)}
+              style={{
+                width: '100%',
+                padding: '8px 12px',
+                fontSize: '14px',
+                border: '1px solid #c5c7d0',
+                borderRadius: '4px',
+                backgroundColor: 'white',
+                cursor: 'pointer'
+              }}
+            >
+              <option value="">-- Select a status --</option>
+              {Object.keys(statusLabels).map(key => (
+                <option key={key} value={statusLabels[key]}>
+                  {statusLabels[key]}
+                </option>
+              ))}
+            </select>
+          </Box>
         );
 
       case 'date':
@@ -109,18 +125,34 @@ const ColumnSelector = ({ columns, selectedColumn, value, onChange, onColumnChan
       case 'dropdown':
         const dropdownSettings = selectedColumnData.settings_str ?
           JSON.parse(selectedColumnData.settings_str) : {};
-        const dropdownOptions = (dropdownSettings.labels || []).map(label => ({
-          value: label.name,
-          label: label.name
-        }));
+        const dropdownLabels = dropdownSettings.labels || [];
 
         return (
-          <Dropdown
-            placeholder="Select an option"
-            options={dropdownOptions}
-            value={value}
-            onChange={(option) => onChange(option.value)}
-          />
+          <Box>
+            <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600, fontSize: '14px' }}>
+              New dropdown value
+            </label>
+            <select
+              value={value}
+              onChange={(e) => onChange(e.target.value)}
+              style={{
+                width: '100%',
+                padding: '8px 12px',
+                fontSize: '14px',
+                border: '1px solid #c5c7d0',
+                borderRadius: '4px',
+                backgroundColor: 'white',
+                cursor: 'pointer'
+              }}
+            >
+              <option value="">-- Select an option --</option>
+              {dropdownLabels.map((label, idx) => (
+                <option key={idx} value={label.name}>
+                  {label.name}
+                </option>
+              ))}
+            </select>
+          </Box>
         );
 
       case 'email':
@@ -177,12 +209,31 @@ const ColumnSelector = ({ columns, selectedColumn, value, onChange, onColumnChan
       <Flex direction="Column" gap={Flex.gaps.LARGE}>
         <Heading type={Heading.types.H3} value="Select Column and Value" />
 
-        <Dropdown
-          placeholder="Select column to update"
-          options={columnOptions}
-          value={selectedColumn}
-          onChange={(option) => onColumnChange(option.value)}
-        />
+        <Box>
+          <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600, fontSize: '14px' }}>
+            Select column to update
+          </label>
+          <select
+            value={selectedColumn}
+            onChange={(e) => onColumnChange(e.target.value)}
+            style={{
+              width: '100%',
+              padding: '8px 12px',
+              fontSize: '14px',
+              border: '1px solid #c5c7d0',
+              borderRadius: '4px',
+              backgroundColor: 'white',
+              cursor: 'pointer'
+            }}
+          >
+            <option value="">-- Select a column --</option>
+            {editableColumns.map(col => (
+              <option key={col.id} value={col.id}>
+                {col.title} ({col.type})
+              </option>
+            ))}
+          </select>
+        </Box>
 
         {selectedColumnData && (
           <>

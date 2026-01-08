@@ -114,13 +114,26 @@ const ItemSelector = ({ items, selectedItems, onSelectItems, loading }) => {
         {/* Advanced filters (optional) */}
         {availableColumns.length > 0 && (
           <Flex gap={Flex.gaps.SMALL} align="Center">
-            <Dropdown
-              placeholder="Filter by column"
-              options={availableColumns}
+            <select
               value={filterColumn}
-              onChange={(option) => setFilterColumn(option.value)}
-              size={Dropdown.sizes.SMALL}
-            />
+              onChange={(e) => setFilterColumn(e.target.value)}
+              style={{
+                padding: '6px 10px',
+                fontSize: '13px',
+                border: '1px solid #c5c7d0',
+                borderRadius: '4px',
+                backgroundColor: 'white',
+                cursor: 'pointer',
+                minWidth: '150px'
+              }}
+            >
+              <option value="">Filter by column</option>
+              {availableColumns.map(col => (
+                <option key={col.value} value={col.value}>
+                  {col.label}
+                </option>
+              ))}
+            </select>
             {filterColumn && (
               <Search
                 placeholder="Value..."
