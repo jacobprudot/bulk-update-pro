@@ -118,3 +118,54 @@ export const bulkUpdateItems = async (boardId, updates) => {
     throw error;
   }
 };
+
+/**
+ * Obtiene los usuarios del workspace
+ * @returns {Promise<Array>} Lista de usuarios
+ */
+export const getWorkspaceUsers = async () => {
+  try {
+    const query = `query {
+      users {
+        id
+        name
+        email
+        photo_thumb
+      }
+    }`;
+
+    const response = await monday.api(query);
+    return response.data.users || [];
+  } catch (error) {
+    console.error('Error obteniendo usuarios:', error);
+    throw error;
+  }
+};
+
+/**
+ * Obtiene items de un board relacionado (para board-relation columns)
+ * @param {string} linkedBoardId - ID del board vinculado
+ * @returns {Promise<Array>} Lista de items del board
+ */
+export const getLinkedBoardItems = async (linkedBoardId) => {
+  try {
+    const query = `query ($boardId: [ID!]) {
+      boards(ids: $boardId) {
+        items_page(limit: 100) {
+          items {
+            id
+            name
+          }
+        }
+      }
+    }`;
+
+    const variables = { boardId: [linkedBoardId] };
+    const response = await monday.api(query, { variables });
+
+    return response.data.boards[0]?.items_page?.items || [];
+  } catch (error) {
+    console.error('Error obteniendo items del board relacionado:', error);
+    throw error;
+  }
+};

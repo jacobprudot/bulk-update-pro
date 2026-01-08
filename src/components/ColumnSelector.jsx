@@ -1,7 +1,7 @@
 import React from 'react';
 import { Box, Heading, Dropdown, TextField, Flex, RadioButton } from 'monday-ui-react-core';
 import { formatColumnValue } from '../../../shared/utils/mondayHelpers';
-import { getWorkspaceUsers } from '../services/mondayService';
+import { getWorkspaceUsers, getLinkedBoardItems } from '../services/mondayService';
 
 /**
  * Component for selecting column and defining update value
@@ -10,6 +10,10 @@ const ColumnSelector = ({ columns, selectedColumn, value, onChange, onColumnChan
   const [updateMode, setUpdateMode] = React.useState('same'); // 'same' or 'different'
   const [users, setUsers] = React.useState([]);
   const [loadingUsers, setLoadingUsers] = React.useState(false);
+  const [linkedBoardItems, setLinkedBoardItems] = React.useState([]);
+  const [loadingLinkedItems, setLoadingLinkedItems] = React.useState(false);
+  const [timelineFrom, setTimelineFrom] = React.useState('');
+  const [timelineTo, setTimelineTo] = React.useState('');
 
   // Load users when component mounts
   React.useEffect(() => {
@@ -28,27 +32,76 @@ const ColumnSelector = ({ columns, selectedColumn, value, onChange, onColumnChan
     }
   };
 
+  // Load linked board items when board-relation column is selected
+  React.useEffect(() => {
+    const loadLinkedBoardItems = async () => {
+      if (selectedColumnData?.type === 'board-relation') {
+        setLoadingLinkedItems(true);
+        try {
+          const settings = selectedColumnData.settings_str ?
+            JSON.parse(selectedColumnData.settings_str) : {};
+          const linkedBoardIds = settings.boardIds || [];
+
+          if (linkedBoardIds.length > 0) {
+            // Load items from the first linked board
+            const items = await getLinkedBoardItems(linkedBoardIds[0]);
+            setLinkedBoardItems(items);
+          }
+        } catch (error) {
+          console.error('Error loading linked board items:', error);
+        } finally {
+          setLoadingLinkedItems(false);
+        }
+      }
+    };
+
+    loadLinkedBoardItems();
+  }, [selectedColumn, selectedColumnData]);
+
+  // Handle timeline date changes
+  const handleTimelineChange = (from, to) => {
+    setTimelineFrom(from);
+    setTimelineTo(to);
+    onChange({ from, to });
+  };
+
   // Filter only editable columns with proper UI support
-  // Exclude complex columns that need special handling
+  // Exclude read-only, calculated, and complex columns without UI implementation
   const editableColumns = columns.filter(col =>
     ![
-      'name',           // Item name (not editable)
+      'name',           // Item name (special handling)
       'mirror',         // Mirror columns (read-only)
-      'formula',        // Formula columns (calculated)
-      'auto-number',    // Auto-number (automatic)
-      'last-updated',   // Last updated (automatic)
-      'creation-log',   // Creation log (automatic)
-      'timeline',       // Timeline (needs date range picker)
-      'time_tracking',  // Time tracking (complex format)
-      'world-clock',    // World clock (timezone picker needed)
-      'board-relation', // Board relation (complex)
-      'dependency',     // Dependency (complex)
-      'file',           // File upload (not supported)
-      'color',          // Color picker (not supported)
-      'vote',           // Vote (not supported)
-      'rating',         // Rating (not supported)
-      'location',       // Location (map picker needed)
-      'hour'            // Hour (time picker needed)
+      'formula',        // Formula columns (calculated, read-only)
+      'auto-number',    // Auto-number (automatic, read-only)
+      'last-updated',   // Last updated (automatic, read-only)
+      'creation-log',   // Creation log (automatic, read-only)
+      'item_id',        // Item ID (automatic, read-only)
+      'progress',       // Progress tracking (calculated, read-only)
+      'time_tracking',  // Time tracking (needs complex time entry UI)
+      'world-clock',    // World clock (needs timezone picker)
+      'dependency',     // Dependency (complex relationship)
+      'file',           // File upload (needs file picker UI)
+      'vote',           // Vote (needs voting UI)
+      'doc',            // Monday Doc (needs doc editor)
+      'button',         // Button (action trigger, not data)
+      // Note: The following are now supported with proper UI:
+      // - timeline (date range picker)
+      // - board-relation (item selector)
+      // - tags (will need tag selector UI - TODO)
+      // - country (will need country picker - TODO)
+      // - week (will need week picker - TODO)
+      // - hour (will need time picker - TODO)
+      // - location (will need location picker - TODO)
+      // - rating (will need rating UI - TODO)
+      // - color/color_picker (will need color picker - TODO)
+      'tags',           // Tags (needs tag selector UI)
+      'country',        // Country (needs country picker)
+      'week',           // Week (needs week picker)
+      'hour',           // Hour (needs time picker)
+      'location',       // Location (needs map/location picker)
+      'rating',         // Rating (needs rating stars UI)
+      'color',          // Color picker (needs color picker UI)
+      'color_picker'    // Color picker (needs color picker UI)
     ].includes(col.type)
   );
 
@@ -262,6 +315,91 @@ const ColumnSelector = ({ columns, selectedColumn, value, onChange, onColumnChan
             type="url"
             size={TextField.sizes.MEDIUM}
           />
+        );
+
+      case 'timeline':
+        return (
+          <Box>
+            <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600, fontSize: '14px' }}>
+              Timeline dates
+            </label>
+            <Flex direction="Row" gap={Flex.gaps.MEDIUM} style={{ marginBottom: '8px' }}>
+              <Box style={{ flex: 1 }}>
+                <label style={{ display: 'block', marginBottom: '4px', fontSize: '12px', color: '#666' }}>
+                  Start date
+                </label>
+                <input
+                  type="date"
+                  value={timelineFrom}
+                  onChange={(e) => handleTimelineChange(e.target.value, timelineTo)}
+                  style={{
+                    width: '100%',
+                    padding: '8px 12px',
+                    fontSize: '14px',
+                    border: '1px solid #c5c7d0',
+                    borderRadius: '4px',
+                    backgroundColor: 'white'
+                  }}
+                />
+              </Box>
+              <Box style={{ flex: 1 }}>
+                <label style={{ display: 'block', marginBottom: '4px', fontSize: '12px', color: '#666' }}>
+                  End date
+                </label>
+                <input
+                  type="date"
+                  value={timelineTo}
+                  onChange={(e) => handleTimelineChange(timelineFrom, e.target.value)}
+                  style={{
+                    width: '100%',
+                    padding: '8px 12px',
+                    fontSize: '14px',
+                    border: '1px solid #c5c7d0',
+                    borderRadius: '4px',
+                    backgroundColor: 'white'
+                  }}
+                />
+              </Box>
+            </Flex>
+            <p style={{ fontSize: '12px', color: '#666', margin: '4px 0 0 0' }}>
+              Select start and end dates for the timeline
+            </p>
+          </Box>
+        );
+
+      case 'board-relation':
+        return (
+          <Box>
+            <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600, fontSize: '14px' }}>
+              Select linked item
+            </label>
+            {loadingLinkedItems ? (
+              <p style={{ color: '#666', fontSize: '14px' }}>Loading items...</p>
+            ) : linkedBoardItems.length === 0 ? (
+              <p style={{ color: '#666', fontSize: '14px' }}>No items found in linked board</p>
+            ) : (
+              <select
+                value={value}
+                onChange={(e) => onChange(e.target.value)}
+                style={{
+                  width: '100%',
+                  padding: '8px 12px',
+                  fontSize: '14px',
+                  border: '1px solid #c5c7d0',
+                  borderRadius: '4px',
+                  backgroundColor: 'white',
+                  cursor: 'pointer'
+                }}
+              >
+                <option value="">-- Select an item --</option>
+                {linkedBoardItems.map(item => (
+                  <option key={item.id} value={item.id}>
+                    {item.name}
+                  </option>
+                ))}
+              </select>
+            )}
+          </Box>
         );
 
       default:

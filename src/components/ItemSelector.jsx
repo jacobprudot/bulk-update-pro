@@ -14,18 +14,37 @@ const ItemSelector = ({ items, selectedItems, onSelectItems, loading }) => {
   // Apply debounce to search
   const debouncedSearch = useDebounce(searchTerm, 300);
 
-  // Get unique columns for filtering
+  // Get all columns that can be used for filtering (status, dropdown, people, etc.)
   const availableColumns = useMemo(() => {
     if (items.length === 0) return [];
 
     const firstItem = items[0];
     return firstItem.column_values
-      ?.filter(col => col.type === 'status' || col.type === 'person')
+      ?.filter(col => ['status', 'dropdown', 'people', 'multiple-person', 'text'].includes(col.type))
       .map(col => ({
         value: col.id,
-        label: col.id
+        label: col.title || col.id,
+        type: col.type
       })) || [];
   }, [items]);
+
+  // Get unique values for the selected filter column
+  const availableFilterValues = useMemo(() => {
+    if (!filterColumn || items.length === 0) return [];
+
+    const uniqueValues = new Set();
+    items.forEach(item => {
+      const column = item.column_values?.find(col => col.id === filterColumn);
+      if (column && column.text) {
+        uniqueValues.add(column.text);
+      }
+    });
+
+    return Array.from(uniqueValues).sort().map(val => ({
+      value: val,
+      label: val
+    }));
+  }, [items, filterColumn]);
 
   // Filter and sort items (memoized for performance)
   const filteredItems = useMemo(() => {
@@ -38,11 +57,11 @@ const ItemSelector = ({ items, selectedItems, onSelectItems, loading }) => {
       );
     }
 
-    // Filter by column
+    // Filter by column (exact match)
     if (filterColumn && filterValue) {
       result = result.filter(item => {
         const column = item.column_values?.find(col => col.id === filterColumn);
-        return column?.text?.toLowerCase().includes(filterValue.toLowerCase());
+        return column?.text === filterValue;
       });
     }
 
@@ -134,13 +153,27 @@ const ItemSelector = ({ items, selectedItems, onSelectItems, loading }) => {
                 </option>
               ))}
             </select>
-            {filterColumn && (
-              <Search
-                placeholder="Value..."
+            {filterColumn && availableFilterValues.length > 0 && (
+              <select
                 value={filterValue}
-                onChange={setFilterValue}
-                size={Search.sizes.SMALL}
-              />
+                onChange={(e) => setFilterValue(e.target.value)}
+                style={{
+                  padding: '6px 10px',
+                  fontSize: '13px',
+                  border: '1px solid #c5c7d0',
+                  borderRadius: '4px',
+                  backgroundColor: 'white',
+                  cursor: 'pointer',
+                  minWidth: '150px'
+                }}
+              >
+                <option value="">-- Select value --</option>
+                {availableFilterValues.map(val => (
+                  <option key={val.value} value={val.value}>
+                    {val.label}
+                  </option>
+                ))}
+              </select>
             )}
             {hasFilters && (
               <Button
