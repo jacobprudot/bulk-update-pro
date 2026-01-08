@@ -103,24 +103,18 @@ const ColumnSelector = ({ columns, selectedColumn, value, onChange, onColumnChan
       'creation-log',   // Creation log (automatic, read-only)
       'item_id',        // Item ID (automatic, read-only)
       'progress',       // Progress tracking (calculated, read-only)
-      'time_tracking',  // Time tracking (needs complex time entry UI)
-      'world-clock',    // World clock (needs timezone picker UI)
-      'dependency',     // Dependency (complex relationship)
-      'file',           // File upload (needs file picker UI)
-      'vote',           // Vote (needs voting UI)
-      'doc',            // Monday Doc (needs doc editor)
-      'button',         // Button (action trigger, not data)
-      'location',       // Location (needs geocoding/map picker - complex)
-      'color',          // Color picker (needs proper color picker UI)
-      'color_picker'    // Color picker (needs proper color picker UI)
-      // ✅ NOW SUPPORTED:
-      // - timeline (date range picker)
-      // - board-relation (item selector)
-      // - tags (tag multi-select)
-      // - country (country dropdown)
-      // - week (week range picker)
-      // - hour (time picker)
-      // - rating (star rating selector)
+      'dependency',     // Dependency (complex item relationships)
+      'file',           // File upload (requires file upload UI)
+      'vote',           // Vote (requires voting mechanism UI)
+      'doc',            // Monday Doc (requires document editor)
+      'button'          // Button (action trigger, not data storage)
+      // ✅ FULLY SUPPORTED (22 types):
+      // Basic: text, long-text, numbers, date, checkbox, email, phone, link
+      // Selection: status, dropdown, people, tags
+      // References: board-relation
+      // Dates/Time: timeline, week, hour, time_tracking
+      // Geographic: country, location, world-clock
+      // Visual: rating, color/color_picker
     ].includes(col.type)
   );
 
@@ -616,6 +610,133 @@ const ColumnSelector = ({ columns, selectedColumn, value, onChange, onColumnChan
               <option value="4">⭐⭐⭐⭐ 4 Stars</option>
               <option value="5">⭐⭐⭐⭐⭐ 5 Stars</option>
             </select>
+          </Box>
+        );
+
+      case 'world-clock':
+        const timezones = [
+          { value: 'America/New_York', label: 'Eastern Time (US & Canada)' },
+          { value: 'America/Chicago', label: 'Central Time (US & Canada)' },
+          { value: 'America/Denver', label: 'Mountain Time (US & Canada)' },
+          { value: 'America/Los_Angeles', label: 'Pacific Time (US & Canada)' },
+          { value: 'America/Anchorage', label: 'Alaska' },
+          { value: 'Pacific/Honolulu', label: 'Hawaii' },
+          { value: 'America/Mexico_City', label: 'Mexico City' },
+          { value: 'America/Bogota', label: 'Bogota, Lima' },
+          { value: 'America/Buenos_Aires', label: 'Buenos Aires' },
+          { value: 'America/Sao_Paulo', label: 'Brasilia, São Paulo' },
+          { value: 'Europe/London', label: 'London, Dublin' },
+          { value: 'Europe/Paris', label: 'Paris, Berlin, Rome' },
+          { value: 'Europe/Madrid', label: 'Madrid' },
+          { value: 'Europe/Moscow', label: 'Moscow, St. Petersburg' },
+          { value: 'Africa/Cairo', label: 'Cairo' },
+          { value: 'Africa/Johannesburg', label: 'Johannesburg' },
+          { value: 'Asia/Dubai', label: 'Dubai, Abu Dhabi' },
+          { value: 'Asia/Kolkata', label: 'Mumbai, New Delhi' },
+          { value: 'Asia/Shanghai', label: 'Beijing, Shanghai' },
+          { value: 'Asia/Tokyo', label: 'Tokyo, Osaka' },
+          { value: 'Asia/Seoul', label: 'Seoul' },
+          { value: 'Asia/Singapore', label: 'Singapore' },
+          { value: 'Australia/Sydney', label: 'Sydney, Melbourne' },
+          { value: 'Pacific/Auckland', label: 'Auckland, Wellington' },
+          { value: 'UTC', label: 'UTC (Coordinated Universal Time)' }
+        ];
+
+        return (
+          <Box>
+            <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600, fontSize: '14px' }}>
+              Select timezone
+            </label>
+            <select
+              value={value}
+              onChange={(e) => onChange(e.target.value)}
+              style={{
+                width: '100%',
+                padding: '8px 12px',
+                fontSize: '14px',
+                border: '1px solid #c5c7d0',
+                borderRadius: '4px',
+                backgroundColor: 'white',
+                cursor: 'pointer'
+              }}
+            >
+              <option value="">-- Select a timezone --</option>
+              {timezones.map(tz => (
+                <option key={tz.value} value={tz.value}>
+                  {tz.label}
+                </option>
+              ))}
+            </select>
+          </Box>
+        );
+
+      case 'time_tracking':
+        return (
+          <Box>
+            <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600, fontSize: '14px' }}>
+              Hours worked
+            </label>
+            <TextField
+              placeholder="Enter hours (e.g., 2.5)"
+              value={value}
+              onChange={(newValue) => {
+                // Convert hours to seconds for API
+                const hours = parseFloat(newValue) || 0;
+                const seconds = Math.round(hours * 3600);
+                onChange(seconds);
+              }}
+              type="number"
+              step="0.25"
+              size={TextField.sizes.MEDIUM}
+            />
+            <p style={{ fontSize: '12px', color: '#666', margin: '4px 0 0 0' }}>
+              Enter time in hours (e.g., 2.5 for 2 hours 30 minutes)
+            </p>
+          </Box>
+        );
+
+      case 'location':
+        return (
+          <Box>
+            <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600, fontSize: '14px' }}>
+              Address
+            </label>
+            <TextField
+              placeholder="Enter address (e.g., New York, NY)"
+              value={value}
+              onChange={onChange}
+              size={TextField.sizes.MEDIUM}
+            />
+            <p style={{ fontSize: '12px', color: '#666', margin: '4px 0 0 0' }}>
+              Enter a text address (geocoding not included)
+            </p>
+          </Box>
+        );
+
+      case 'color':
+      case 'color_picker':
+        return (
+          <Box>
+            <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600, fontSize: '14px' }}>
+              Select color
+            </label>
+            <input
+              type="color"
+              value={value || '#000000'}
+              onChange={(e) => onChange(e.target.value)}
+              style={{
+                width: '100%',
+                height: '48px',
+                padding: '4px',
+                border: '1px solid #c5c7d0',
+                borderRadius: '4px',
+                backgroundColor: 'white',
+                cursor: 'pointer'
+              }}
+            />
+            <p style={{ fontSize: '12px', color: '#666', margin: '4px 0 0 0' }}>
+              Selected: {value || '#000000'}
+            </p>
           </Box>
         );
 
