@@ -1,0 +1,190 @@
+import React, { useMemo } from 'react';
+import { Box, Heading, Checkbox, Flex, Search, Loader, Dropdown, Button, Icon } from 'monday-ui-react-core';
+import { useDebounce } from '../hooks/useDebounce';
+
+/**
+ * Component for selecting board items
+ */
+const ItemSelector = ({ items, selectedItems, onSelectItems, loading }) => {
+  const [searchTerm, setSearchTerm] = React.useState('');
+  const [filterColumn, setFilterColumn] = React.useState('');
+  const [filterValue, setFilterValue] = React.useState('');
+  const [sortBy, setSortBy] = React.useState('name');
+
+  // Apply debounce to search
+  const debouncedSearch = useDebounce(searchTerm, 300);
+
+  // Get unique columns for filtering
+  const availableColumns = useMemo(() => {
+    if (items.length === 0) return [];
+
+    const firstItem = items[0];
+    return firstItem.column_values
+      ?.filter(col => col.type === 'status' || col.type === 'person')
+      .map(col => ({
+        value: col.id,
+        label: col.id
+      })) || [];
+  }, [items]);
+
+  // Filter and sort items (memoized for performance)
+  const filteredItems = useMemo(() => {
+    let result = items;
+
+    // Search by name
+    if (debouncedSearch) {
+      result = result.filter(item =>
+        item.name.toLowerCase().includes(debouncedSearch.toLowerCase())
+      );
+    }
+
+    // Filter by column
+    if (filterColumn && filterValue) {
+      result = result.filter(item => {
+        const column = item.column_values?.find(col => col.id === filterColumn);
+        return column?.text?.toLowerCase().includes(filterValue.toLowerCase());
+      });
+    }
+
+    // Sort
+    if (sortBy === 'name') {
+      result = [...result].sort((a, b) => a.name.localeCompare(b.name));
+    }
+
+    return result;
+  }, [items, debouncedSearch, filterColumn, filterValue, sortBy]);
+
+  const handleSelectAll = (checked) => {
+    if (checked) {
+      onSelectItems(filteredItems.map(item => item.id));
+    } else {
+      onSelectItems([]);
+    }
+  };
+
+  const handleSelectItem = (itemId, checked) => {
+    if (checked) {
+      onSelectItems([...selectedItems, itemId]);
+    } else {
+      onSelectItems(selectedItems.filter(id => id !== itemId));
+    }
+  };
+
+  const handleClearFilters = () => {
+    setSearchTerm('');
+    setFilterColumn('');
+    setFilterValue('');
+  };
+
+  const allSelected = filteredItems.length > 0 &&
+    filteredItems.every(item => selectedItems.includes(item.id));
+
+  const hasFilters = searchTerm || filterColumn || filterValue;
+
+  if (loading) {
+    return (
+      <Box padding={Box.paddings.MEDIUM}>
+        <Flex justify="Center" align="Center" style={{ minHeight: '200px' }}>
+          <Loader />
+        </Flex>
+      </Box>
+    );
+  }
+
+  return (
+    <Box padding={Box.paddings.MEDIUM}>
+      <Flex direction="Column" gap={Flex.gaps.MEDIUM}>
+        <Flex justify="SpaceBetween" align="Center">
+          <Heading type={Heading.types.H3} value="Select Items" />
+          {items.length > 0 && (
+            <span style={{ fontSize: '14px', color: '#666' }}>
+              Total: {items.length} items
+            </span>
+          )}
+        </Flex>
+
+        {/* Search */}
+        <Search
+          placeholder="Search by name..."
+          value={searchTerm}
+          onChange={setSearchTerm}
+          size={Search.sizes.MEDIUM}
+        />
+
+        {/* Advanced filters (optional) */}
+        {availableColumns.length > 0 && (
+          <Flex gap={Flex.gaps.SMALL} align="Center">
+            <Dropdown
+              placeholder="Filter by column"
+              options={availableColumns}
+              value={filterColumn}
+              onChange={(option) => setFilterColumn(option.value)}
+              size={Dropdown.sizes.SMALL}
+            />
+            {filterColumn && (
+              <Search
+                placeholder="Value..."
+                value={filterValue}
+                onChange={setFilterValue}
+                size={Search.sizes.SMALL}
+              />
+            )}
+            {hasFilters && (
+              <Button
+                size={Button.sizes.SMALL}
+                kind={Button.kinds.TERTIARY}
+                onClick={handleClearFilters}
+              >
+                Clear filters
+              </Button>
+            )}
+          </Flex>
+        )}
+
+        {/* Items list */}
+        <Flex direction="Column" gap={Flex.gaps.SMALL} style={{ maxHeight: '400px', overflowY: 'auto' }}>
+          <Checkbox
+            label={`Select all (${filteredItems.length})`}
+            checked={allSelected}
+            onChange={handleSelectAll}
+          />
+
+          <Box style={{ borderTop: '1px solid #e0e0e0', paddingTop: '8px' }} />
+
+          {filteredItems.map(item => (
+            <Checkbox
+              key={item.id}
+              label={item.name}
+              checked={selectedItems.includes(item.id)}
+              onChange={(checked) => handleSelectItem(item.id, checked)}
+            />
+          ))}
+
+          {filteredItems.length === 0 && (
+            <Box padding={Box.paddings.MEDIUM}>
+              <p style={{ color: '#666', textAlign: 'center' }}>
+                {hasFilters
+                  ? 'No items found with applied filters'
+                  : 'No items in this board'}
+              </p>
+            </Box>
+          )}
+        </Flex>
+
+        {/* Footer with counter */}
+        <Flex justify="SpaceBetween" align="Center" style={{ borderTop: '1px solid #e0e0e0', paddingTop: '8px' }}>
+          <p style={{ fontSize: '14px', color: '#666', margin: 0 }}>
+            <strong>{selectedItems.length}</strong> of {filteredItems.length} selected
+          </p>
+          {selectedItems.length > 50 && (
+            <p style={{ fontSize: '12px', color: '#ff9800', margin: 0 }}>
+              ⚠️ Bulk update ({selectedItems.length} items)
+            </p>
+          )}
+        </Flex>
+      </Flex>
+    </Box>
+  );
+};
+
+export default ItemSelector;

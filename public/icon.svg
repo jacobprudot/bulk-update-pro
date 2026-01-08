@@ -1,0 +1,20 @@
+<svg width="128" height="128" viewBox="0 0 128 128" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background circle -->
+  <circle cx="64" cy="64" r="60" fill="#0073EA"/>
+
+  <!-- Grid/Table representation -->
+  <rect x="28" y="36" width="16" height="16" rx="2" fill="white" opacity="0.9"/>
+  <rect x="48" y="36" width="16" height="16" rx="2" fill="white" opacity="0.9"/>
+  <rect x="68" y="36" width="16" height="16" rx="2" fill="white" opacity="0.9"/>
+
+  <rect x="28" y="56" width="16" height="16" rx="2" fill="white" opacity="0.9"/>
+  <rect x="48" y="56" width="16" height="16" rx="2" fill="white" opacity="0.9"/>
+  <rect x="68" y="56" width="16" height="16" rx="2" fill="white" opacity="0.9"/>
+
+  <rect x="28" y="76" width="16" height="16" rx="2" fill="white" opacity="0.9"/>
+  <rect x="48" y="76" width="16" height="16" rx="2" fill="white" opacity="0.9"/>
+  <rect x="68" y="76" width="16" height="16" rx="2" fill="white" opacity="0.9"/>
+
+  <!-- Arrow pointing right (update action) -->
+  <path d="M88 64 L104 64 L104 58 L116 70 L104 82 L104 76 L88 76 Z" fill="#00C875"/>
+</svg>

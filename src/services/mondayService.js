@@ -1,0 +1,120 @@
+import mondaySDK from 'monday-sdk-js';
+
+const monday = mondaySDK();
+
+/**
+ * Obtiene los items de un board
+ * @param {string} boardId - ID del board
+ * @returns {Promise<Array>} Lista de items
+ */
+export const getBoardItems = async (boardId) => {
+  try {
+    const query = `query ($boardId: [ID!]) {
+      boards(ids: $boardId) {
+        items_page {
+          items {
+            id
+            name
+            column_values {
+              id
+              text
+              value
+              type
+            }
+          }
+        }
+      }
+    }`;
+
+    const variables = { boardId: [boardId] };
+    const response = await monday.api(query, { variables });
+
+    return response.data.boards[0]?.items_page?.items || [];
+  } catch (error) {
+    console.error('Error obteniendo items del board:', error);
+    throw error;
+  }
+};
+
+/**
+ * Obtiene las columnas de un board
+ * @param {string} boardId - ID del board
+ * @returns {Promise<Array>} Lista de columnas
+ */
+export const getBoardColumns = async (boardId) => {
+  try {
+    const query = `query ($boardId: [ID!]) {
+      boards(ids: $boardId) {
+        columns {
+          id
+          title
+          type
+          settings_str
+        }
+      }
+    }`;
+
+    const variables = { boardId: [boardId] };
+    const response = await monday.api(query, { variables });
+
+    return response.data.boards[0]?.columns || [];
+  } catch (error) {
+    console.error('Error obteniendo columnas del board:', error);
+    throw error;
+  }
+};
+
+/**
+ * Actualiza el valor de una columna en un item
+ * @param {string} boardId - ID del board
+ * @param {string} itemId - ID del item
+ * @param {string} columnId - ID de la columna
+ * @param {string} value - Nuevo valor (en formato JSON string)
+ * @returns {Promise<Object>} Resultado de la actualización
+ */
+export const updateColumnValue = async (boardId, itemId, columnId, value) => {
+  try {
+    const mutation = `mutation ($boardId: ID!, $itemId: ID!, $columnId: String!, $value: JSON!) {
+      change_column_value(
+        board_id: $boardId,
+        item_id: $itemId,
+        column_id: $columnId,
+        value: $value
+      ) {
+        id
+      }
+    }`;
+
+    const variables = {
+      boardId,
+      itemId,
+      columnId,
+      value: JSON.stringify(value)
+    };
+
+    const response = await monday.api(mutation, { variables });
+    return response.data.change_column_value;
+  } catch (error) {
+    console.error('Error actualizando valor de columna:', error);
+    throw error;
+  }
+};
+
+/**
+ * Actualiza múltiples items en lote
+ * @param {string} boardId - ID del board
+ * @param {Array} updates - Array de objetos {itemId, columnId, value}
+ * @returns {Promise<Array>} Resultados de las actualizaciones
+ */
+export const bulkUpdateItems = async (boardId, updates) => {
+  try {
+    const promises = updates.map(({ itemId, columnId, value }) =>
+      updateColumnValue(boardId, itemId, columnId, value)
+    );
+
+    return await Promise.all(promises);
+  } catch (error) {
+    console.error('Error en actualización masiva:', error);
+    throw error;
+  }
+};

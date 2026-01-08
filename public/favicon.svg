@@ -1,0 +1,14 @@
+<svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Simple favicon version -->
+  <rect width="32" height="32" rx="6" fill="#0073EA"/>
+
+  <!-- Grid -->
+  <rect x="6" y="8" width="5" height="5" rx="1" fill="white" opacity="0.9"/>
+  <rect x="13" y="8" width="5" height="5" rx="1" fill="white" opacity="0.9"/>
+
+  <rect x="6" y="15" width="5" height="5" rx="1" fill="white" opacity="0.9"/>
+  <rect x="13" y="15" width="5" height="5" rx="1" fill="white" opacity="0.9"/>
+
+  <!-- Arrow -->
+  <path d="M21 16 L26 16 L26 14 L29 17.5 L26 21 L26 19 L21 19 Z" fill="#00C875"/>
+</svg>

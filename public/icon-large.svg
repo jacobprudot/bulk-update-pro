@@ -1,0 +1,30 @@
+<svg width="256" height="256" viewBox="0 0 256 256" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background circle with gradient -->
+  <circle cx="128" cy="128" r="120" fill="url(#gradient)"/>
+
+  <defs>
+    <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#0073EA;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#0060C0;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+
+  <!-- Grid/Table representation (larger) -->
+  <rect x="56" y="72" width="32" height="32" rx="4" fill="white" opacity="0.95"/>
+  <rect x="96" y="72" width="32" height="32" rx="4" fill="white" opacity="0.95"/>
+  <rect x="136" y="72" width="32" height="32" rx="4" fill="white" opacity="0.95"/>
+
+  <rect x="56" y="112" width="32" height="32" rx="4" fill="white" opacity="0.95"/>
+  <rect x="96" y="112" width="32" height="32" rx="4" fill="white" opacity="0.95"/>
+  <rect x="136" y="112" width="32" height="32" rx="4" fill="white" opacity="0.95"/>
+
+  <rect x="56" y="152" width="32" height="32" rx="4" fill="white" opacity="0.95"/>
+  <rect x="96" y="152" width="32" height="32" rx="4" fill="white" opacity="0.95"/>
+  <rect x="136" y="152" width="32" height="32" rx="4" fill="white" opacity="0.95"/>
+
+  <!-- Arrow pointing right (update action) -->
+  <path d="M176 128 L208 128 L208 116 L232 140 L208 164 L208 152 L176 152 Z" fill="#00C875" stroke="#00A866" stroke-width="2"/>
+
+  <!-- Small checkmark overlay on arrow -->
+  <path d="M190 130 L196 136 L206 126" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+</svg>
