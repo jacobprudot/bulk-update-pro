@@ -1,16 +1,55 @@
 import React from 'react';
 import { Box, Heading, Dropdown, TextField, Flex, RadioButton } from 'monday-ui-react-core';
 import { formatColumnValue } from '../../../shared/utils/mondayHelpers';
+import { getWorkspaceUsers } from '../services/mondayService';
 
 /**
  * Component for selecting column and defining update value
  */
 const ColumnSelector = ({ columns, selectedColumn, value, onChange, onColumnChange }) => {
   const [updateMode, setUpdateMode] = React.useState('same'); // 'same' or 'different'
+  const [users, setUsers] = React.useState([]);
+  const [loadingUsers, setLoadingUsers] = React.useState(false);
 
-  // Filter only editable columns (exclude name, mirror, formula, etc)
+  // Load users when component mounts
+  React.useEffect(() => {
+    loadUsers();
+  }, []);
+
+  const loadUsers = async () => {
+    setLoadingUsers(true);
+    try {
+      const workspaceUsers = await getWorkspaceUsers();
+      setUsers(workspaceUsers);
+    } catch (error) {
+      console.error('Error loading users:', error);
+    } finally {
+      setLoadingUsers(false);
+    }
+  };
+
+  // Filter only editable columns with proper UI support
+  // Exclude complex columns that need special handling
   const editableColumns = columns.filter(col =>
-    !['name', 'mirror', 'formula', 'auto-number', 'last-updated', 'creation-log'].includes(col.type)
+    ![
+      'name',           // Item name (not editable)
+      'mirror',         // Mirror columns (read-only)
+      'formula',        // Formula columns (calculated)
+      'auto-number',    // Auto-number (automatic)
+      'last-updated',   // Last updated (automatic)
+      'creation-log',   // Creation log (automatic)
+      'timeline',       // Timeline (needs date range picker)
+      'time_tracking',  // Time tracking (complex format)
+      'world-clock',    // World clock (timezone picker needed)
+      'board-relation', // Board relation (complex)
+      'dependency',     // Dependency (complex)
+      'file',           // File upload (not supported)
+      'color',          // Color picker (not supported)
+      'vote',           // Vote (not supported)
+      'rating',         // Rating (not supported)
+      'location',       // Location (map picker needed)
+      'hour'            // Hour (time picker needed)
+    ].includes(col.type)
   );
 
   const columnOptions = editableColumns.map(col => ({
@@ -120,6 +159,40 @@ const ColumnSelector = ({ columns, selectedColumn, value, onChange, onColumnChan
               onSelect={() => onChange('false')}
             />
           </Flex>
+        );
+
+      case 'people':
+      case 'multiple-person':
+        return (
+          <Box>
+            <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600, fontSize: '14px' }}>
+              Select person
+            </label>
+            {loadingUsers ? (
+              <p style={{ color: '#666', fontSize: '14px' }}>Loading users...</p>
+            ) : (
+              <select
+                value={value}
+                onChange={(e) => onChange(e.target.value)}
+                style={{
+                  width: '100%',
+                  padding: '8px 12px',
+                  fontSize: '14px',
+                  border: '1px solid #c5c7d0',
+                  borderRadius: '4px',
+                  backgroundColor: 'white',
+                  cursor: 'pointer'
+                }}
+              >
+                <option value="">-- Select a person --</option>
+                {users.map(user => (
+                  <option key={user.id} value={user.id}>
+                    {user.name} ({user.email})
+                  </option>
+                ))}
+              </select>
+            )}
+          </Box>
         );
 
       case 'dropdown':
