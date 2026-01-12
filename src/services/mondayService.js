@@ -101,22 +101,45 @@ export const updateColumnValue = async (boardId, itemId, columnId, value) => {
 };
 
 /**
- * Actualiza múltiples items en lote
+ * Actualiza múltiples items en lote con manejo de errores granular
  * @param {string} boardId - ID del board
  * @param {Array} updates - Array de objetos {itemId, columnId, value}
- * @returns {Promise<Array>} Resultados de las actualizaciones
+ * @param {Function} onProgress - Callback para reportar progreso (optional)
+ * @returns {Promise<Object>} Objeto con resultados exitosos y fallidos
  */
-export const bulkUpdateItems = async (boardId, updates) => {
-  try {
-    const promises = updates.map(({ itemId, columnId, value }) =>
-      updateColumnValue(boardId, itemId, columnId, value)
-    );
+export const bulkUpdateItems = async (boardId, updates, onProgress) => {
+  const results = {
+    successful: [],
+    failed: [],
+    total: updates.length
+  };
 
-    return await Promise.all(promises);
-  } catch (error) {
-    console.error('Error en actualización masiva:', error);
-    throw error;
+  for (let i = 0; i < updates.length; i++) {
+    const { itemId, columnId, value } = updates[i];
+
+    try {
+      const result = await updateColumnValue(boardId, itemId, columnId, value);
+      results.successful.push({ itemId, columnId, result });
+    } catch (error) {
+      console.error(`Error updating item ${itemId}:`, error);
+      results.failed.push({
+        itemId,
+        columnId,
+        error: error.message || 'Unknown error'
+      });
+    }
+
+    // Report progress if callback provided
+    if (onProgress) {
+      onProgress({
+        current: i + 1,
+        total: updates.length,
+        percentage: ((i + 1) / updates.length) * 100
+      });
+    }
   }
+
+  return results;
 };
 
 /**

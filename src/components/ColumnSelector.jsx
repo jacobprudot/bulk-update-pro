@@ -1,6 +1,6 @@
 import React from 'react';
 import { Box, Heading, Dropdown, TextField, Flex, RadioButton } from 'monday-ui-react-core';
-import { formatColumnValue } from '../utils/mondayHelpers';
+import { formatColumnValue, safeJsonParse } from '../utils/mondayHelpers';
 import { getWorkspaceUsers, getLinkedBoardItems, getBoardTags } from '../services/mondayService';
 
 /**
@@ -106,8 +106,7 @@ const ColumnSelector = ({ columns, selectedColumn, value, onChange, onColumnChan
     const loadLinkedItems = async () => {
       setLoadingLinkedItems(true);
       try {
-        const settings = colData.settings_str ?
-          JSON.parse(colData.settings_str) : {};
+        const settings = safeJsonParse(colData.settings_str);
         const linkedBoardIds = settings.boardIds || [];
 
         if (linkedBoardIds.length > 0) {
@@ -178,7 +177,7 @@ const ColumnSelector = ({ columns, selectedColumn, value, onChange, onColumnChan
 
       case 'status':
         const settings = selectedColumnData.settings_str ?
-          JSON.parse(selectedColumnData.settings_str) : {};
+          safeJsonParse(selectedColumnData.settings_str) : {};
         const statusLabels = settings.labels || {};
 
         return (
@@ -278,7 +277,7 @@ const ColumnSelector = ({ columns, selectedColumn, value, onChange, onColumnChan
 
       case 'dropdown':
         const dropdownSettings = selectedColumnData.settings_str ?
-          JSON.parse(selectedColumnData.settings_str) : {};
+          safeJsonParse(selectedColumnData.settings_str) : {};
         const dropdownLabels = dropdownSettings.labels || [];
 
         return (

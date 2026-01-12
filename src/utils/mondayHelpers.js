@@ -3,6 +3,22 @@
  */
 
 /**
+ * Safely parses JSON string, returning default value on error
+ * @param {string} jsonString - JSON string to parse
+ * @param {*} defaultValue - Default value if parsing fails
+ * @returns {*} Parsed value or default
+ */
+export const safeJsonParse = (jsonString, defaultValue = {}) => {
+  if (!jsonString) return defaultValue;
+  try {
+    return JSON.parse(jsonString);
+  } catch (error) {
+    console.warn('Failed to parse JSON:', error.message);
+    return defaultValue;
+  }
+};
+
+/**
  * Formatea el valor de una columna según su tipo para Monday.com API
  * Basado en: https://developer.monday.com/api-reference/docs/change-column-values
  * @param {string} type - Tipo de columna
@@ -80,8 +96,7 @@ export const formatColumnValue = (type, value) => {
     // Time tracking columns: NOT SUPPORTED for updates via API
     // According to Monday.com docs, time_tracking only supports Read and Filter, not Update
     case 'time_tracking':
-      console.warn('Time tracking columns cannot be updated via API');
-      return null;
+      throw new Error('Time tracking columns cannot be updated via Monday.com API. This column type only supports read operations.');
 
     // World clock / timezone: {"timezone": "America/New_York"}
     case 'world-clock':

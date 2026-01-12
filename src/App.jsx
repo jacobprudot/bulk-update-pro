@@ -126,24 +126,33 @@ function App() {
         value: formattedValue
       }));
 
-      // Update in batches to show progress
-      const batchSize = 10;
-      const batches = [];
+      // Execute bulk update with progress callback
+      const results = await bulkUpdateItems(
+        context.boardId,
+        updates,
+        (progressData) => setProgress(progressData.percentage)
+      );
 
-      for (let i = 0; i < updates.length; i += batchSize) {
-        batches.push(updates.slice(i, i + batchSize));
+      // Show results
+      if (results.failed.length === 0) {
+        monday.execute('notice', {
+          message: `${results.successful.length} item(s) updated successfully`,
+          type: 'success',
+          timeout: 5000
+        });
+      } else if (results.successful.length > 0) {
+        monday.execute('notice', {
+          message: `${results.successful.length} updated, ${results.failed.length} failed`,
+          type: 'warning',
+          timeout: 5000
+        });
+      } else {
+        monday.execute('notice', {
+          message: `Failed to update ${results.failed.length} item(s)`,
+          type: 'error',
+          timeout: 5000
+        });
       }
-
-      for (let i = 0; i < batches.length; i++) {
-        await bulkUpdateItems(context.boardId, batches[i]);
-        setProgress(((i + 1) / batches.length) * 100);
-      }
-
-      monday.execute('notice', {
-        message: `${selectedItems.length} item(s) updated successfully`,
-        type: 'success',
-        timeout: 5000
-      });
 
       // Reset
       setSelectedItems([]);
@@ -158,7 +167,7 @@ function App() {
     } catch (error) {
       console.error('Error in bulk update:', error);
       monday.execute('notice', {
-        message: 'Error updating items. Please try again.',
+        message: error.message || 'Error updating items. Please try again.',
         type: 'error',
         timeout: 5000
       });
