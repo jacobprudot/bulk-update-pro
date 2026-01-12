@@ -15,11 +15,12 @@ export const formatColumnValue = (type, value) => {
     case 'text':
       return `"${String(value).replace(/"/g, '\\"')}"`;
 
-    // Long text columns: simple string (same format as text)
+    // Long text columns: {"text": "value"}
     // Monday API can return type as 'long-text' or 'long_text'
+    // According to API docs: https://developer.monday.com/api-reference/reference/long-text
     case 'long-text':
     case 'long_text':
-      return `"${String(value).replace(/"/g, '\\"')}"`;
+      return JSON.stringify({ text: String(value) });
 
     // Status columns: {"label": "status_name"}
     case 'status':
