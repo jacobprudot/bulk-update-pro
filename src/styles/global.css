@@ -3,7 +3,7 @@
 
 /* Global styles matching Monday.com design */
 :root {
-  /* Monday.com color palette */
+  /* Monday.com color palette - Light mode */
   --primary-color: #0073ea;
   --primary-hover-color: #0060b9;
   --primary-selected-color: #cce5ff;
@@ -22,6 +22,107 @@
   /* Typography */
   --font-family: 'Figtree', 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   --title-font-family: 'Poppins', 'Figtree', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+/* Dark mode variables */
+body.dark-mode,
+body[data-theme="dark"],
+body[data-theme="black"] {
+  --primary-background-color: #1c1f3b;
+  --secondary-background-color: #30324e;
+  --primary-text-color: #ffffff;
+  --secondary-text-color: #9699a6;
+  --ui-border-color: #4b4e69;
+  --layout-border-color: #4b4e69;
+  --placeholder-color: #6b6e80;
+
+  background-color: #1c1f3b;
+  color: #ffffff;
+}
+
+/* Dark mode specific styles */
+body.dark-mode h1,
+body.dark-mode h2,
+body.dark-mode h3,
+body.dark-mode h4,
+body.dark-mode h5,
+body.dark-mode h6,
+body[data-theme="dark"] h1,
+body[data-theme="dark"] h2,
+body[data-theme="dark"] h3,
+body[data-theme="dark"] h4,
+body[data-theme="dark"] h5,
+body[data-theme="dark"] h6,
+body[data-theme="black"] h1,
+body[data-theme="black"] h2,
+body[data-theme="black"] h3,
+body[data-theme="black"] h4,
+body[data-theme="black"] h5,
+body[data-theme="black"] h6 {
+  color: #ffffff;
+}
+
+body.dark-mode label,
+body[data-theme="dark"] label,
+body[data-theme="black"] label {
+  color: #ffffff;
+}
+
+body.dark-mode input,
+body.dark-mode select,
+body.dark-mode textarea,
+body[data-theme="dark"] input,
+body[data-theme="dark"] select,
+body[data-theme="dark"] textarea,
+body[data-theme="black"] input,
+body[data-theme="black"] select,
+body[data-theme="black"] textarea {
+  background-color: #30324e;
+  color: #ffffff;
+  border-color: #4b4e69;
+}
+
+/* Dark mode select options */
+body.dark-mode select option,
+body[data-theme="dark"] select option,
+body[data-theme="black"] select option {
+  background-color: #30324e;
+  color: #ffffff;
+}
+
+body.dark-mode select option:hover,
+body.dark-mode select option:checked,
+body[data-theme="dark"] select option:hover,
+body[data-theme="dark"] select option:checked,
+body[data-theme="black"] select option:hover,
+body[data-theme="black"] select option:checked {
+  background-color: #4b4e69;
+  color: #ffffff;
+}
+
+body.dark-mode select,
+body[data-theme="dark"] select,
+body[data-theme="black"] select {
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg width='10' height='6' viewBox='0 0 10 6' fill='none' xmlns='http://www.w3.org/2000/svg'%3e%3cpath d='M1 1L5 5L9 1' stroke='%239699a6' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3e%3c/svg%3e");
+}
+
+body.dark-mode input::placeholder,
+body[data-theme="dark"] input::placeholder,
+body[data-theme="black"] input::placeholder {
+  color: #6b6e80;
+}
+
+/* Dark mode scrollbar */
+body.dark-mode ::-webkit-scrollbar-thumb,
+body[data-theme="dark"] ::-webkit-scrollbar-thumb,
+body[data-theme="black"] ::-webkit-scrollbar-thumb {
+  background: #4b4e69;
+}
+
+body.dark-mode ::-webkit-scrollbar-thumb:hover,
+body[data-theme="dark"] ::-webkit-scrollbar-thumb:hover,
+body[data-theme="black"] ::-webkit-scrollbar-thumb:hover {
+  background: #6b6e80;
 }
 
 /* Reset and base styles */

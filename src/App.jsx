@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useMonday } from './hooks/useMonday';
 import { getBoardItems, getBoardColumns, bulkUpdateItems } from './services/mondayService';
-import { formatColumnValue } from '../../shared/utils/mondayHelpers';
+import { formatColumnValue } from './utils/mondayHelpers';
 import { Button, Loader, Heading, Flex, Box } from 'monday-ui-react-core';
 import ItemSelector from './components/ItemSelector';
 import ColumnSelector from './components/ColumnSelector';
@@ -10,6 +10,36 @@ import CustomStepper from './components/CustomStepper';
 
 function App() {
   const { monday, context, loading: sdkLoading } = useMonday();
+  const [theme, setTheme] = useState('light');
+
+  // Listen for theme changes from Monday.com
+  useEffect(() => {
+    if (monday) {
+      monday.listen('context', (res) => {
+        if (res.data.theme) {
+          setTheme(res.data.theme);
+        }
+      });
+      // Also get initial theme
+      monday.get('context').then((res) => {
+        if (res.data.theme) {
+          setTheme(res.data.theme);
+        }
+      });
+    }
+  }, [monday]);
+
+  // Apply theme class to body
+  useEffect(() => {
+    document.body.setAttribute('data-theme', theme);
+    if (theme === 'dark' || theme === 'black') {
+      document.body.classList.add('dark-mode');
+    } else {
+      document.body.classList.remove('dark-mode');
+    }
+  }, [theme]);
+
+  const isDarkMode = theme === 'dark' || theme === 'black';
 
   // Data state
   const [items, setItems] = useState([]);
@@ -164,13 +194,54 @@ function App() {
     );
   }
 
+  // Theme-aware styles
+  const containerStyle = {
+    maxWidth: '1200px',
+    margin: '0 auto',
+    backgroundColor: isDarkMode ? '#1c1f3b' : 'transparent',
+    minHeight: '100vh'
+  };
+
+  const subtitleStyle = {
+    color: isDarkMode ? '#9699a6' : '#666',
+    margin: '8px 0 0 0'
+  };
+
+  const contentBoxStyle = {
+    minHeight: '400px',
+    background: isDarkMode ? '#30324e' : '#fff',
+    borderRadius: '8px',
+    border: isDarkMode ? '1px solid #4b4e69' : '1px solid #e0e0e0'
+  };
+
+  const progressBoxStyle = {
+    background: isDarkMode ? '#30324e' : '#f5f5f5',
+    padding: '16px',
+    borderRadius: '8px'
+  };
+
+  const progressBarBgStyle = {
+    width: '100%',
+    background: isDarkMode ? '#4b4e69' : '#e0e0e0',
+    height: '8px',
+    borderRadius: '4px'
+  };
+
+  const textStyle = {
+    color: isDarkMode ? '#ffffff' : '#323338'
+  };
+
+  const mutedTextStyle = {
+    color: isDarkMode ? '#9699a6' : '#666'
+  };
+
   return (
-    <Box padding={Box.paddings.LARGE} style={{ maxWidth: '1200px', margin: '0 auto' }}>
+    <Box padding={Box.paddings.LARGE} style={containerStyle}>
       <Flex direction="Column" gap={Flex.gaps.LARGE}>
         {/* Header */}
         <Box>
           <Heading type={Heading.types.H1} value="Bulk Update Pro" />
-          <p style={{ color: '#666', margin: '8px 0 0 0' }}>
+          <p style={subtitleStyle}>
             Update multiple items quickly and easily
           </p>
         </Box>
@@ -179,16 +250,18 @@ function App() {
         <CustomStepper
           steps={steps}
           activeStepIndex={currentStep}
+          isDarkMode={isDarkMode}
         />
 
         {/* Step content */}
-        <Box style={{ minHeight: '400px', background: '#fff', borderRadius: '8px', border: '1px solid #e0e0e0' }}>
+        <Box style={contentBoxStyle}>
           {currentStep === 0 && (
             <ItemSelector
               items={items}
               selectedItems={selectedItems}
               onSelectItems={setSelectedItems}
               loading={loading}
+              isDarkMode={isDarkMode}
             />
           )}
 
@@ -200,6 +273,7 @@ function App() {
               onChange={setNewValue}
               onColumnChange={setSelectedColumn}
               boardId={context?.boardId}
+              isDarkMode={isDarkMode}
             />
           )}
 
@@ -212,6 +286,7 @@ function App() {
               columns={columns}
               onConfirm={handleConfirmUpdate}
               onCancel={handleCancelPreview}
+              isDarkMode={isDarkMode}
             />
           )}
         </Box>
@@ -237,10 +312,10 @@ function App() {
 
         {/* Progress during update */}
         {isProcessing && (
-          <Box style={{ background: '#f5f5f5', padding: '16px', borderRadius: '8px' }}>
+          <Box style={progressBoxStyle}>
             <Flex direction="Column" gap={Flex.gaps.SMALL}>
-              <p style={{ margin: 0, fontWeight: 600 }}>Processing updates...</p>
-              <div style={{ width: '100%', background: '#e0e0e0', height: '8px', borderRadius: '4px' }}>
+              <p style={{ margin: 0, fontWeight: 600, ...textStyle }}>Processing updates...</p>
+              <div style={progressBarBgStyle}>
                 <div
                   style={{
                     width: `${progress}%`,
@@ -251,7 +326,7 @@ function App() {
                   }}
                 />
               </div>
-              <p style={{ margin: 0, fontSize: '12px', color: '#666' }}>
+              <p style={{ margin: 0, fontSize: '12px', ...mutedTextStyle }}>
                 {Math.round(progress)}% complete
               </p>
             </Flex>

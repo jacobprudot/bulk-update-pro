@@ -32,9 +32,11 @@ yarn-error.log*
 
 # Monday.com
 .monday/
+.mappsrc
 
 # Build artifacts
 *.zip
+*.tar.gz
 
 # Windows reserved names
 nul

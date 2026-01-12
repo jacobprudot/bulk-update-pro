@@ -1,13 +1,20 @@
 import React from 'react';
 import { Box, Heading, Dropdown, TextField, Flex, RadioButton } from 'monday-ui-react-core';
-import { formatColumnValue } from '../../../shared/utils/mondayHelpers';
+import { formatColumnValue } from '../utils/mondayHelpers';
 import { getWorkspaceUsers, getLinkedBoardItems, getBoardTags } from '../services/mondayService';
 
 /**
  * Component for selecting column and defining update value
  */
-const ColumnSelector = ({ columns, selectedColumn, value, onChange, onColumnChange, boardId }) => {
+const ColumnSelector = ({ columns, selectedColumn, value, onChange, onColumnChange, boardId, isDarkMode }) => {
   const [updateMode, setUpdateMode] = React.useState('same'); // 'same' or 'different'
+
+  // Theme-aware colors
+  const textColor = isDarkMode ? '#ffffff' : '#323338';
+  const mutedColor = isDarkMode ? '#9699a6' : '#666';
+  const inputBgColor = isDarkMode ? '#30324e' : 'white';
+  const inputBorderColor = isDarkMode ? '#4b4e69' : '#c5c7d0';
+  const borderColor = isDarkMode ? '#4b4e69' : '#e0e0e0';
   const [users, setUsers] = React.useState([]);
   const [loadingUsers, setLoadingUsers] = React.useState(false);
   const [linkedBoardItems, setLinkedBoardItems] = React.useState([]);
@@ -19,63 +26,103 @@ const ColumnSelector = ({ columns, selectedColumn, value, onChange, onColumnChan
   const [weekStart, setWeekStart] = React.useState('');
   const [weekEnd, setWeekEnd] = React.useState('');
 
-  // Load users and tags when component mounts
+  // Use useMemo to prevent recreation on every render
+  const selectedColumnData = React.useMemo(() => {
+    return columns.find(col => col.id === selectedColumn);
+  }, [columns, selectedColumn]);
+
+  // Define editable columns with useMemo
+  const editableColumns = React.useMemo(() => {
+    return columns.filter(col =>
+      ![
+        'name',           // Item name (special handling)
+        'mirror',         // Mirror columns (read-only)
+        'formula',        // Formula columns (calculated, read-only)
+        'auto-number',    // Auto-number (automatic, read-only)
+        'last-updated',   // Last updated (automatic, read-only)
+        'creation-log',   // Creation log (automatic, read-only)
+        'item_id',        // Item ID (automatic, read-only)
+        'progress',       // Progress tracking (calculated, read-only)
+        'dependency',     // Dependency (complex item relationships)
+        'file',           // File upload (requires file upload UI)
+        'vote',           // Vote (requires voting mechanism UI)
+        'doc',            // Monday Doc (requires document editor)
+        'button',         // Button (action trigger, not data storage)
+        'time_tracking'   // Time tracking (API does not support updates)
+      ].includes(col.type)
+    );
+  }, [columns]);
+
+  const columnOptions = React.useMemo(() => {
+    return editableColumns.map(col => ({
+      value: col.id,
+      label: `${col.title} (${col.type})`
+    }));
+  }, [editableColumns]);
+
+  // Load users when component mounts
   React.useEffect(() => {
-    loadUsers();
-    if (boardId) {
-      loadTags();
-    }
+    const loadUsersAsync = async () => {
+      setLoadingUsers(true);
+      try {
+        const workspaceUsers = await getWorkspaceUsers();
+        setUsers(workspaceUsers);
+      } catch (error) {
+        console.error('Error loading users:', error);
+      } finally {
+        setLoadingUsers(false);
+      }
+    };
+    loadUsersAsync();
+  }, []);
+
+  // Load tags when boardId changes
+  React.useEffect(() => {
+    if (!boardId) return;
+
+    const loadTagsAsync = async () => {
+      setLoadingTags(true);
+      try {
+        const boardTags = await getBoardTags(boardId);
+        setTags(boardTags);
+      } catch (error) {
+        console.error('Error loading tags:', error);
+      } finally {
+        setLoadingTags(false);
+      }
+    };
+    loadTagsAsync();
   }, [boardId]);
-
-  const loadUsers = async () => {
-    setLoadingUsers(true);
-    try {
-      const workspaceUsers = await getWorkspaceUsers();
-      setUsers(workspaceUsers);
-    } catch (error) {
-      console.error('Error loading users:', error);
-    } finally {
-      setLoadingUsers(false);
-    }
-  };
-
-  const loadTags = async () => {
-    setLoadingTags(true);
-    try {
-      const boardTags = await getBoardTags(boardId);
-      setTags(boardTags);
-    } catch (error) {
-      console.error('Error loading tags:', error);
-    } finally {
-      setLoadingTags(false);
-    }
-  };
 
   // Load linked board items when board-relation column is selected
   React.useEffect(() => {
-    const loadLinkedBoardItems = async () => {
-      if (selectedColumnData?.type === 'board-relation') {
-        setLoadingLinkedItems(true);
-        try {
-          const settings = selectedColumnData.settings_str ?
-            JSON.parse(selectedColumnData.settings_str) : {};
-          const linkedBoardIds = settings.boardIds || [];
+    // Find the column data inside the effect to avoid TDZ issues
+    const colData = columns.find(col => col.id === selectedColumn);
 
-          if (linkedBoardIds.length > 0) {
-            // Load items from the first linked board
-            const items = await getLinkedBoardItems(linkedBoardIds[0]);
-            setLinkedBoardItems(items);
-          }
-        } catch (error) {
-          console.error('Error loading linked board items:', error);
-        } finally {
-          setLoadingLinkedItems(false);
+    if (!colData || colData.type !== 'board-relation') {
+      return;
+    }
+
+    const loadLinkedItems = async () => {
+      setLoadingLinkedItems(true);
+      try {
+        const settings = colData.settings_str ?
+          JSON.parse(colData.settings_str) : {};
+        const linkedBoardIds = settings.boardIds || [];
+
+        if (linkedBoardIds.length > 0) {
+          const items = await getLinkedBoardItems(linkedBoardIds[0]);
+          setLinkedBoardItems(items);
         }
+      } catch (error) {
+        console.error('Error loading linked board items:', error);
+      } finally {
+        setLoadingLinkedItems(false);
       }
     };
 
-    loadLinkedBoardItems();
-  }, [selectedColumn, selectedColumnData]);
+    loadLinkedItems();
+  }, [selectedColumn, columns]);
 
   // Handle timeline date changes
   const handleTimelineChange = (from, to) => {
@@ -91,45 +138,11 @@ const ColumnSelector = ({ columns, selectedColumn, value, onChange, onColumnChan
     onChange({ startDate: start, endDate: end });
   };
 
-  // Filter only editable columns with proper UI support
-  // Exclude read-only, calculated, and complex columns without UI implementation
-  const editableColumns = columns.filter(col =>
-    ![
-      'name',           // Item name (special handling)
-      'mirror',         // Mirror columns (read-only)
-      'formula',        // Formula columns (calculated, read-only)
-      'auto-number',    // Auto-number (automatic, read-only)
-      'last-updated',   // Last updated (automatic, read-only)
-      'creation-log',   // Creation log (automatic, read-only)
-      'item_id',        // Item ID (automatic, read-only)
-      'progress',       // Progress tracking (calculated, read-only)
-      'dependency',     // Dependency (complex item relationships)
-      'file',           // File upload (requires file upload UI)
-      'vote',           // Vote (requires voting mechanism UI)
-      'doc',            // Monday Doc (requires document editor)
-      'button'          // Button (action trigger, not data storage)
-      // ✅ FULLY SUPPORTED (22 types):
-      // Basic: text, long-text, numbers, date, checkbox, email, phone, link
-      // Selection: status, dropdown, people, tags
-      // References: board-relation
-      // Dates/Time: timeline, week, hour, time_tracking
-      // Geographic: country, location, world-clock
-      // Visual: rating, color/color_picker
-    ].includes(col.type)
-  );
-
-  const columnOptions = editableColumns.map(col => ({
-    value: col.id,
-    label: `${col.title} (${col.type})`
-  }));
-
-  const selectedColumnData = columns.find(col => col.id === selectedColumn);
-
   const renderValueInput = () => {
     if (!selectedColumnData) {
       return (
         <Box padding={Box.paddings.MEDIUM}>
-          <p style={{ color: '#666', textAlign: 'center' }}>
+          <p style={{ color: mutedColor, textAlign: 'center' }}>
             Select a column to continue
           </p>
         </Box>
@@ -170,7 +183,7 @@ const ColumnSelector = ({ columns, selectedColumn, value, onChange, onColumnChan
 
         return (
           <Box>
-            <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600, fontSize: '14px' }}>
+            <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600, fontSize: '14px', color: textColor }}>
               New status value
             </label>
             <select
@@ -180,9 +193,10 @@ const ColumnSelector = ({ columns, selectedColumn, value, onChange, onColumnChan
                 width: '100%',
                 padding: '8px 12px',
                 fontSize: '14px',
-                border: '1px solid #c5c7d0',
+                border: `1px solid ${inputBorderColor}`,
                 borderRadius: '4px',
-                backgroundColor: 'white',
+                backgroundColor: inputBgColor,
+                color: textColor,
                 cursor: 'pointer'
               }}
             >
@@ -231,11 +245,11 @@ const ColumnSelector = ({ columns, selectedColumn, value, onChange, onColumnChan
       case 'multiple-person':
         return (
           <Box>
-            <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600, fontSize: '14px' }}>
+            <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600, fontSize: '14px', color: textColor }}>
               Select person
             </label>
             {loadingUsers ? (
-              <p style={{ color: '#666', fontSize: '14px' }}>Loading users...</p>
+              <p style={{ color: mutedColor, fontSize: '14px' }}>Loading users...</p>
             ) : (
               <select
                 value={value}
@@ -244,9 +258,10 @@ const ColumnSelector = ({ columns, selectedColumn, value, onChange, onColumnChan
                   width: '100%',
                   padding: '8px 12px',
                   fontSize: '14px',
-                  border: '1px solid #c5c7d0',
+                  border: `1px solid ${inputBorderColor}`,
                   borderRadius: '4px',
-                  backgroundColor: 'white',
+                  backgroundColor: inputBgColor,
+                  color: textColor,
                   cursor: 'pointer'
                 }}
               >
@@ -268,7 +283,7 @@ const ColumnSelector = ({ columns, selectedColumn, value, onChange, onColumnChan
 
         return (
           <Box>
-            <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600, fontSize: '14px' }}>
+            <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600, fontSize: '14px', color: textColor }}>
               New dropdown value
             </label>
             <select
@@ -278,9 +293,10 @@ const ColumnSelector = ({ columns, selectedColumn, value, onChange, onColumnChan
                 width: '100%',
                 padding: '8px 12px',
                 fontSize: '14px',
-                border: '1px solid #c5c7d0',
+                border: `1px solid ${inputBorderColor}`,
                 borderRadius: '4px',
-                backgroundColor: 'white',
+                backgroundColor: inputBgColor,
+                color: textColor,
                 cursor: 'pointer'
               }}
             >
@@ -333,12 +349,12 @@ const ColumnSelector = ({ columns, selectedColumn, value, onChange, onColumnChan
       case 'timeline':
         return (
           <Box>
-            <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600, fontSize: '14px' }}>
+            <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600, fontSize: '14px', color: textColor }}>
               Timeline dates
             </label>
             <Flex direction="Row" gap={Flex.gaps.MEDIUM} style={{ marginBottom: '8px' }}>
               <Box style={{ flex: 1 }}>
-                <label style={{ display: 'block', marginBottom: '4px', fontSize: '12px', color: '#666' }}>
+                <label style={{ display: 'block', marginBottom: '4px', fontSize: '12px', color: mutedColor }}>
                   Start date
                 </label>
                 <input
@@ -349,14 +365,15 @@ const ColumnSelector = ({ columns, selectedColumn, value, onChange, onColumnChan
                     width: '100%',
                     padding: '8px 12px',
                     fontSize: '14px',
-                    border: '1px solid #c5c7d0',
+                    border: `1px solid ${inputBorderColor}`,
                     borderRadius: '4px',
-                    backgroundColor: 'white'
+                    backgroundColor: inputBgColor,
+                    color: textColor
                   }}
                 />
               </Box>
               <Box style={{ flex: 1 }}>
-                <label style={{ display: 'block', marginBottom: '4px', fontSize: '12px', color: '#666' }}>
+                <label style={{ display: 'block', marginBottom: '4px', fontSize: '12px', color: mutedColor }}>
                   End date
                 </label>
                 <input
@@ -367,14 +384,15 @@ const ColumnSelector = ({ columns, selectedColumn, value, onChange, onColumnChan
                     width: '100%',
                     padding: '8px 12px',
                     fontSize: '14px',
-                    border: '1px solid #c5c7d0',
+                    border: `1px solid ${inputBorderColor}`,
                     borderRadius: '4px',
-                    backgroundColor: 'white'
+                    backgroundColor: inputBgColor,
+                    color: textColor
                   }}
                 />
               </Box>
             </Flex>
-            <p style={{ fontSize: '12px', color: '#666', margin: '4px 0 0 0' }}>
+            <p style={{ fontSize: '12px', color: mutedColor, margin: '4px 0 0 0' }}>
               Select start and end dates for the timeline
             </p>
           </Box>
@@ -383,13 +401,13 @@ const ColumnSelector = ({ columns, selectedColumn, value, onChange, onColumnChan
       case 'board-relation':
         return (
           <Box>
-            <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600, fontSize: '14px' }}>
+            <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600, fontSize: '14px', color: textColor }}>
               Select linked item
             </label>
             {loadingLinkedItems ? (
-              <p style={{ color: '#666', fontSize: '14px' }}>Loading items...</p>
+              <p style={{ color: mutedColor, fontSize: '14px' }}>Loading items...</p>
             ) : linkedBoardItems.length === 0 ? (
-              <p style={{ color: '#666', fontSize: '14px' }}>No items found in linked board</p>
+              <p style={{ color: mutedColor, fontSize: '14px' }}>No items found in linked board</p>
             ) : (
               <select
                 value={value}
@@ -398,9 +416,10 @@ const ColumnSelector = ({ columns, selectedColumn, value, onChange, onColumnChan
                   width: '100%',
                   padding: '8px 12px',
                   fontSize: '14px',
-                  border: '1px solid #c5c7d0',
+                  border: `1px solid ${inputBorderColor}`,
                   borderRadius: '4px',
-                  backgroundColor: 'white',
+                  backgroundColor: inputBgColor,
+                  color: textColor,
                   cursor: 'pointer'
                 }}
               >
@@ -418,13 +437,13 @@ const ColumnSelector = ({ columns, selectedColumn, value, onChange, onColumnChan
       case 'tags':
         return (
           <Box>
-            <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600, fontSize: '14px' }}>
+            <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600, fontSize: '14px', color: textColor }}>
               Select tag
             </label>
             {loadingTags ? (
-              <p style={{ color: '#666', fontSize: '14px' }}>Loading tags...</p>
+              <p style={{ color: mutedColor, fontSize: '14px' }}>Loading tags...</p>
             ) : tags.length === 0 ? (
-              <p style={{ color: '#666', fontSize: '14px' }}>No tags found in board</p>
+              <p style={{ color: mutedColor, fontSize: '14px' }}>No tags found in board</p>
             ) : (
               <select
                 value={value}
@@ -433,9 +452,10 @@ const ColumnSelector = ({ columns, selectedColumn, value, onChange, onColumnChan
                   width: '100%',
                   padding: '8px 12px',
                   fontSize: '14px',
-                  border: '1px solid #c5c7d0',
+                  border: `1px solid ${inputBorderColor}`,
                   borderRadius: '4px',
-                  backgroundColor: 'white',
+                  backgroundColor: inputBgColor,
+                  color: textColor,
                   cursor: 'pointer'
                 }}
               >
@@ -460,6 +480,12 @@ const ColumnSelector = ({ columns, selectedColumn, value, onChange, onColumnChan
           { code: 'AR', name: 'Argentina' },
           { code: 'CL', name: 'Chile' },
           { code: 'CO', name: 'Colombia' },
+          { code: 'PE', name: 'Peru' },
+          { code: 'VE', name: 'Venezuela' },
+          { code: 'EC', name: 'Ecuador' },
+          { code: 'UY', name: 'Uruguay' },
+          { code: 'PY', name: 'Paraguay' },
+          { code: 'BO', name: 'Bolivia' },
           { code: 'ES', name: 'Spain' },
           { code: 'FR', name: 'France' },
           { code: 'DE', name: 'Germany' },
@@ -470,32 +496,65 @@ const ColumnSelector = ({ columns, selectedColumn, value, onChange, onColumnChan
           { code: 'CH', name: 'Switzerland' },
           { code: 'AT', name: 'Austria' },
           { code: 'PL', name: 'Poland' },
+          { code: 'SE', name: 'Sweden' },
+          { code: 'NO', name: 'Norway' },
+          { code: 'DK', name: 'Denmark' },
+          { code: 'FI', name: 'Finland' },
+          { code: 'IE', name: 'Ireland' },
+          { code: 'GR', name: 'Greece' },
+          { code: 'CZ', name: 'Czech Republic' },
+          { code: 'RO', name: 'Romania' },
+          { code: 'HU', name: 'Hungary' },
           { code: 'RU', name: 'Russia' },
+          { code: 'UA', name: 'Ukraine' },
           { code: 'CN', name: 'China' },
           { code: 'JP', name: 'Japan' },
           { code: 'KR', name: 'South Korea' },
           { code: 'IN', name: 'India' },
+          { code: 'ID', name: 'Indonesia' },
+          { code: 'TH', name: 'Thailand' },
+          { code: 'VN', name: 'Vietnam' },
+          { code: 'PH', name: 'Philippines' },
+          { code: 'MY', name: 'Malaysia' },
+          { code: 'SG', name: 'Singapore' },
           { code: 'AU', name: 'Australia' },
           { code: 'NZ', name: 'New Zealand' },
           { code: 'ZA', name: 'South Africa' },
-          { code: 'IL', name: 'Israel' }
+          { code: 'EG', name: 'Egypt' },
+          { code: 'NG', name: 'Nigeria' },
+          { code: 'KE', name: 'Kenya' },
+          { code: 'IL', name: 'Israel' },
+          { code: 'AE', name: 'United Arab Emirates' },
+          { code: 'SA', name: 'Saudi Arabia' },
+          { code: 'TR', name: 'Turkey' }
         ];
+
+        const handleCountryChange = (e) => {
+          const selectedCode = e.target.value;
+          const selectedCountry = countries.find(c => c.code === selectedCode);
+          if (selectedCountry) {
+            onChange({ countryCode: selectedCountry.code, countryName: selectedCountry.name });
+          } else {
+            onChange('');
+          }
+        };
 
         return (
           <Box>
-            <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600, fontSize: '14px' }}>
+            <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600, fontSize: '14px', color: textColor }}>
               Select country
             </label>
             <select
-              value={value}
-              onChange={(e) => onChange(e.target.value)}
+              value={typeof value === 'object' ? value.countryCode : value}
+              onChange={handleCountryChange}
               style={{
                 width: '100%',
                 padding: '8px 12px',
                 fontSize: '14px',
-                border: '1px solid #c5c7d0',
+                border: `1px solid ${inputBorderColor}`,
                 borderRadius: '4px',
-                backgroundColor: 'white',
+                backgroundColor: inputBgColor,
+                color: textColor,
                 cursor: 'pointer'
               }}
             >
@@ -512,12 +571,12 @@ const ColumnSelector = ({ columns, selectedColumn, value, onChange, onColumnChan
       case 'week':
         return (
           <Box>
-            <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600, fontSize: '14px' }}>
+            <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600, fontSize: '14px', color: textColor }}>
               Week range
             </label>
             <Flex direction="Row" gap={Flex.gaps.MEDIUM} style={{ marginBottom: '8px' }}>
               <Box style={{ flex: 1 }}>
-                <label style={{ display: 'block', marginBottom: '4px', fontSize: '12px', color: '#666' }}>
+                <label style={{ display: 'block', marginBottom: '4px', fontSize: '12px', color: mutedColor }}>
                   Week start date
                 </label>
                 <input
@@ -528,14 +587,15 @@ const ColumnSelector = ({ columns, selectedColumn, value, onChange, onColumnChan
                     width: '100%',
                     padding: '8px 12px',
                     fontSize: '14px',
-                    border: '1px solid #c5c7d0',
+                    border: `1px solid ${inputBorderColor}`,
                     borderRadius: '4px',
-                    backgroundColor: 'white'
+                    backgroundColor: inputBgColor,
+                    color: textColor
                   }}
                 />
               </Box>
               <Box style={{ flex: 1 }}>
-                <label style={{ display: 'block', marginBottom: '4px', fontSize: '12px', color: '#666' }}>
+                <label style={{ display: 'block', marginBottom: '4px', fontSize: '12px', color: mutedColor }}>
                   Week end date
                 </label>
                 <input
@@ -546,14 +606,15 @@ const ColumnSelector = ({ columns, selectedColumn, value, onChange, onColumnChan
                     width: '100%',
                     padding: '8px 12px',
                     fontSize: '14px',
-                    border: '1px solid #c5c7d0',
+                    border: `1px solid ${inputBorderColor}`,
                     borderRadius: '4px',
-                    backgroundColor: 'white'
+                    backgroundColor: inputBgColor,
+                    color: textColor
                   }}
                 />
               </Box>
             </Flex>
-            <p style={{ fontSize: '12px', color: '#666', margin: '4px 0 0 0' }}>
+            <p style={{ fontSize: '12px', color: mutedColor, margin: '4px 0 0 0' }}>
               Select start and end dates for the week (typically Monday to Sunday)
             </p>
           </Box>
@@ -562,7 +623,7 @@ const ColumnSelector = ({ columns, selectedColumn, value, onChange, onColumnChan
       case 'hour':
         return (
           <Box>
-            <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600, fontSize: '14px' }}>
+            <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600, fontSize: '14px', color: textColor }}>
               Time
             </label>
             <input
@@ -573,12 +634,13 @@ const ColumnSelector = ({ columns, selectedColumn, value, onChange, onColumnChan
                 width: '100%',
                 padding: '8px 12px',
                 fontSize: '14px',
-                border: '1px solid #c5c7d0',
+                border: `1px solid ${inputBorderColor}`,
                 borderRadius: '4px',
-                backgroundColor: 'white'
+                backgroundColor: inputBgColor,
+                color: textColor
               }}
             />
-            <p style={{ fontSize: '12px', color: '#666', margin: '4px 0 0 0' }}>
+            <p style={{ fontSize: '12px', color: mutedColor, margin: '4px 0 0 0' }}>
               Select a time in 24-hour format
             </p>
           </Box>
@@ -587,7 +649,7 @@ const ColumnSelector = ({ columns, selectedColumn, value, onChange, onColumnChan
       case 'rating':
         return (
           <Box>
-            <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600, fontSize: '14px' }}>
+            <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600, fontSize: '14px', color: textColor }}>
               Rating
             </label>
             <select
@@ -597,9 +659,10 @@ const ColumnSelector = ({ columns, selectedColumn, value, onChange, onColumnChan
                 width: '100%',
                 padding: '8px 12px',
                 fontSize: '14px',
-                border: '1px solid #c5c7d0',
+                border: `1px solid ${inputBorderColor}`,
                 borderRadius: '4px',
-                backgroundColor: 'white',
+                backgroundColor: inputBgColor,
+                color: textColor,
                 cursor: 'pointer'
               }}
             >
@@ -644,7 +707,7 @@ const ColumnSelector = ({ columns, selectedColumn, value, onChange, onColumnChan
 
         return (
           <Box>
-            <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600, fontSize: '14px' }}>
+            <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600, fontSize: '14px', color: textColor }}>
               Select timezone
             </label>
             <select
@@ -654,9 +717,10 @@ const ColumnSelector = ({ columns, selectedColumn, value, onChange, onColumnChan
                 width: '100%',
                 padding: '8px 12px',
                 fontSize: '14px',
-                border: '1px solid #c5c7d0',
+                border: `1px solid ${inputBorderColor}`,
                 borderRadius: '4px',
-                backgroundColor: 'white',
+                backgroundColor: inputBgColor,
+                color: textColor,
                 cursor: 'pointer'
               }}
             >
@@ -670,35 +734,13 @@ const ColumnSelector = ({ columns, selectedColumn, value, onChange, onColumnChan
           </Box>
         );
 
-      case 'time_tracking':
-        return (
-          <Box>
-            <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600, fontSize: '14px' }}>
-              Hours worked
-            </label>
-            <TextField
-              placeholder="Enter hours (e.g., 2.5)"
-              value={value}
-              onChange={(newValue) => {
-                // Convert hours to seconds for API
-                const hours = parseFloat(newValue) || 0;
-                const seconds = Math.round(hours * 3600);
-                onChange(seconds);
-              }}
-              type="number"
-              step="0.25"
-              size={TextField.sizes.MEDIUM}
-            />
-            <p style={{ fontSize: '12px', color: '#666', margin: '4px 0 0 0' }}>
-              Enter time in hours (e.g., 2.5 for 2 hours 30 minutes)
-            </p>
-          </Box>
-        );
+      // Note: time_tracking is excluded from editable columns because
+      // Monday.com API does not support updating time tracking columns
 
       case 'location':
         return (
           <Box>
-            <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600, fontSize: '14px' }}>
+            <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600, fontSize: '14px', color: textColor }}>
               Address
             </label>
             <TextField
@@ -707,7 +749,7 @@ const ColumnSelector = ({ columns, selectedColumn, value, onChange, onColumnChan
               onChange={onChange}
               size={TextField.sizes.MEDIUM}
             />
-            <p style={{ fontSize: '12px', color: '#666', margin: '4px 0 0 0' }}>
+            <p style={{ fontSize: '12px', color: mutedColor, margin: '4px 0 0 0' }}>
               Enter a text address (geocoding not included)
             </p>
           </Box>
@@ -717,7 +759,7 @@ const ColumnSelector = ({ columns, selectedColumn, value, onChange, onColumnChan
       case 'color_picker':
         return (
           <Box>
-            <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600, fontSize: '14px' }}>
+            <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600, fontSize: '14px', color: textColor }}>
               Select color
             </label>
             <input
@@ -728,13 +770,13 @@ const ColumnSelector = ({ columns, selectedColumn, value, onChange, onColumnChan
                 width: '100%',
                 height: '48px',
                 padding: '4px',
-                border: '1px solid #c5c7d0',
+                border: `1px solid ${inputBorderColor}`,
                 borderRadius: '4px',
-                backgroundColor: 'white',
+                backgroundColor: inputBgColor,
                 cursor: 'pointer'
               }}
             />
-            <p style={{ fontSize: '12px', color: '#666', margin: '4px 0 0 0' }}>
+            <p style={{ fontSize: '12px', color: mutedColor, margin: '4px 0 0 0' }}>
               Selected: {value || '#000000'}
             </p>
           </Box>
@@ -759,7 +801,7 @@ const ColumnSelector = ({ columns, selectedColumn, value, onChange, onColumnChan
         <Heading type={Heading.types.H3} value="Select Column and Value" />
 
         <Box>
-          <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600, fontSize: '14px' }}>
+          <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600, fontSize: '14px', color: textColor }}>
             Select column to update
           </label>
           <select
@@ -769,9 +811,10 @@ const ColumnSelector = ({ columns, selectedColumn, value, onChange, onColumnChan
               width: '100%',
               padding: '8px 12px',
               fontSize: '14px',
-              border: '1px solid #c5c7d0',
+              border: `1px solid ${inputBorderColor}`,
               borderRadius: '4px',
-              backgroundColor: 'white',
+              backgroundColor: inputBgColor,
+              color: textColor,
               cursor: 'pointer'
             }}
           >
@@ -786,15 +829,15 @@ const ColumnSelector = ({ columns, selectedColumn, value, onChange, onColumnChan
 
         {selectedColumnData && (
           <>
-            <Box style={{ borderTop: '1px solid #e0e0e0', paddingTop: '16px' }}>
+            <Box style={{ borderTop: `1px solid ${borderColor}`, paddingTop: '16px' }}>
               {renderValueInput()}
             </Box>
 
-            <Box style={{ background: '#f5f5f5', padding: '12px', borderRadius: '4px' }}>
-              <p style={{ fontSize: '12px', color: '#666', margin: 0 }}>
-                <strong>Column type:</strong> {selectedColumnData.type}
+            <Box style={{ background: isDarkMode ? '#252846' : '#f5f5f5', padding: '12px', borderRadius: '4px' }}>
+              <p style={{ fontSize: '12px', color: mutedColor, margin: 0 }}>
+                <strong style={{ color: textColor }}>Column type:</strong> {selectedColumnData.type}
               </p>
-              <p style={{ fontSize: '12px', color: '#666', margin: '4px 0 0 0' }}>
+              <p style={{ fontSize: '12px', color: mutedColor, margin: '4px 0 0 0' }}>
                 All selected items will be updated with this value
               </p>
             </Box>

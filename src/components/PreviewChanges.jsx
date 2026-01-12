@@ -1,6 +1,6 @@
 import React from 'react';
 import { Box, Heading, Flex, Table, Button } from 'monday-ui-react-core';
-import { getColumnText } from '../../../shared/utils/mondayHelpers';
+import { getColumnText } from '../utils/mondayHelpers';
 
 /**
  * Component to preview changes before applying them

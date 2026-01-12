@@ -5,8 +5,15 @@ import { useDebounce } from '../hooks/useDebounce';
 /**
  * Component for selecting board items
  */
-const ItemSelector = ({ items, selectedItems, onSelectItems, loading }) => {
+const ItemSelector = ({ items, selectedItems, onSelectItems, loading, isDarkMode }) => {
   const [searchTerm, setSearchTerm] = React.useState('');
+
+  // Theme-aware text colors
+  const textColor = isDarkMode ? '#ffffff' : '#323338';
+  const mutedColor = isDarkMode ? '#9699a6' : '#666';
+  const borderColor = isDarkMode ? '#4b4e69' : '#e0e0e0';
+  const inputBgColor = isDarkMode ? '#30324e' : 'white';
+  const inputBorderColor = isDarkMode ? '#4b4e69' : '#c5c7d0';
   const [filterColumn, setFilterColumn] = React.useState('');
   const [filterValue, setFilterValue] = React.useState('');
   const [sortBy, setSortBy] = React.useState('name');
@@ -116,7 +123,7 @@ const ItemSelector = ({ items, selectedItems, onSelectItems, loading }) => {
         <Flex justify="SpaceBetween" align="Center">
           <Heading type={Heading.types.H3} value="Select Items" />
           {items.length > 0 && (
-            <span style={{ fontSize: '14px', color: '#666' }}>
+            <span style={{ fontSize: '14px', color: mutedColor }}>
               Total: {items.length} items
             </span>
           )}
@@ -139,9 +146,10 @@ const ItemSelector = ({ items, selectedItems, onSelectItems, loading }) => {
               style={{
                 padding: '6px 10px',
                 fontSize: '13px',
-                border: '1px solid #c5c7d0',
+                border: `1px solid ${inputBorderColor}`,
                 borderRadius: '4px',
-                backgroundColor: 'white',
+                backgroundColor: inputBgColor,
+                color: textColor,
                 cursor: 'pointer',
                 minWidth: '150px'
               }}
@@ -160,9 +168,10 @@ const ItemSelector = ({ items, selectedItems, onSelectItems, loading }) => {
                 style={{
                   padding: '6px 10px',
                   fontSize: '13px',
-                  border: '1px solid #c5c7d0',
+                  border: `1px solid ${inputBorderColor}`,
                   borderRadius: '4px',
-                  backgroundColor: 'white',
+                  backgroundColor: inputBgColor,
+                  color: textColor,
                   cursor: 'pointer',
                   minWidth: '150px'
                 }}
@@ -195,7 +204,7 @@ const ItemSelector = ({ items, selectedItems, onSelectItems, loading }) => {
             onChange={handleSelectAll}
           />
 
-          <Box style={{ borderTop: '1px solid #e0e0e0', paddingTop: '8px' }} />
+          <Box style={{ borderTop: `1px solid ${borderColor}`, paddingTop: '8px' }} />
 
           {filteredItems.map(item => (
             <Checkbox
@@ -208,7 +217,7 @@ const ItemSelector = ({ items, selectedItems, onSelectItems, loading }) => {
 
           {filteredItems.length === 0 && (
             <Box padding={Box.paddings.MEDIUM}>
-              <p style={{ color: '#666', textAlign: 'center' }}>
+              <p style={{ color: mutedColor, textAlign: 'center' }}>
                 {hasFilters
                   ? 'No items found with applied filters'
                   : 'No items in this board'}
@@ -218,9 +227,9 @@ const ItemSelector = ({ items, selectedItems, onSelectItems, loading }) => {
         </Flex>
 
         {/* Footer with counter */}
-        <Flex justify="SpaceBetween" align="Center" style={{ borderTop: '1px solid #e0e0e0', paddingTop: '8px' }}>
-          <p style={{ fontSize: '14px', color: '#666', margin: 0 }}>
-            <strong>{selectedItems.length}</strong> of {filteredItems.length} selected
+        <Flex justify="SpaceBetween" align="Center" style={{ borderTop: `1px solid ${borderColor}`, paddingTop: '8px' }}>
+          <p style={{ fontSize: '14px', color: mutedColor, margin: 0 }}>
+            <strong style={{ color: textColor }}>{selectedItems.length}</strong> of {filteredItems.length} selected
           </p>
           {selectedItems.length > 50 && (
             <p style={{ fontSize: '12px', color: '#ff9800', margin: 0 }}>

@@ -4,7 +4,13 @@ import { Flex, Box } from 'monday-ui-react-core';
 /**
  * Stepper personalizado para navegación de pasos
  */
-const CustomStepper = ({ steps, activeStepIndex }) => {
+const CustomStepper = ({ steps, activeStepIndex, isDarkMode }) => {
+  // Theme colors
+  const textColor = isDarkMode ? '#ffffff' : '#323338';
+  const mutedColor = isDarkMode ? '#9699a6' : '#666';
+  const inactiveBg = isDarkMode ? '#4b4e69' : '#e0e0e0';
+  const lineColor = isDarkMode ? '#4b4e69' : '#e0e0e0';
+
   return (
     <Flex gap={Flex.gaps.SMALL} align="Center" style={{ padding: '16px 0' }}>
       {steps.map((step, index) => {
@@ -20,8 +26,8 @@ const CustomStepper = ({ steps, activeStepIndex }) => {
                   width: '32px',
                   height: '32px',
                   borderRadius: '50%',
-                  background: isActive ? '#0073ea' : isCompleted ? '#00c875' : '#e0e0e0',
-                  color: isActive || isCompleted ? '#fff' : '#666',
+                  background: isActive ? '#0073ea' : isCompleted ? '#00c875' : inactiveBg,
+                  color: isActive || isCompleted ? '#fff' : mutedColor,
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
@@ -37,14 +43,14 @@ const CustomStepper = ({ steps, activeStepIndex }) => {
                 <div style={{
                   fontSize: '14px',
                   fontWeight: isActive ? 600 : 400,
-                  color: isActive ? '#0073ea' : '#323338'
+                  color: isActive ? '#0073ea' : textColor
                 }}>
                   {step.title}
                 </div>
                 {step.subtitle && (
                   <div style={{
                     fontSize: '12px',
-                    color: '#666',
+                    color: mutedColor,
                     marginTop: '2px'
                   }}>
                     {step.subtitle}
@@ -59,7 +65,7 @@ const CustomStepper = ({ steps, activeStepIndex }) => {
                 style={{
                   flex: 1,
                   height: '2px',
-                  background: isCompleted ? '#00c875' : '#e0e0e0',
+                  background: isCompleted ? '#00c875' : lineColor,
                   margin: '0 8px',
                   minWidth: '40px'
                 }}
