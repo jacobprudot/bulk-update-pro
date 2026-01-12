@@ -7,6 +7,7 @@ import ItemSelector from './components/ItemSelector';
 import ColumnSelector from './components/ColumnSelector';
 import PreviewChanges from './components/PreviewChanges';
 import CustomStepper from './components/CustomStepper';
+import logoImg from './assets/logo.png';
 
 function App() {
   const { monday, context, loading: sdkLoading } = useMonday();
@@ -249,10 +250,23 @@ function App() {
       <Flex direction="Column" gap={Flex.gaps.LARGE}>
         {/* Header */}
         <Box>
-          <Heading type={Heading.types.H1} value="Bulk Update Pro" />
-          <p style={subtitleStyle}>
-            Update multiple items quickly and easily
-          </p>
+          <Flex align="Center" gap={Flex.gaps.MEDIUM}>
+            <img
+              src={logoImg}
+              alt="Bulk Update Pro"
+              style={{
+                width: '48px',
+                height: '48px',
+                objectFit: 'contain'
+              }}
+            />
+            <Box>
+              <Heading type={Heading.types.H1} value="Bulk Update Pro" />
+              <p style={subtitleStyle}>
+                Update multiple items quickly and easily
+              </p>
+            </Box>
+          </Flex>
         </Box>
 
         {/* Stepper */}
