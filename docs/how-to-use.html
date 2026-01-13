@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How to Use - Bulk Update Pro</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 40px 20px;
+            background: #f9fafb;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 50px;
+        }
+        .header h1 {
+            font-size: 2.5rem;
+            color: #1f2937;
+            margin-bottom: 10px;
+        }
+        .header p {
+            font-size: 1.2rem;
+            color: #6b7280;
+        }
+        .section {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .section h2 {
+            font-size: 1.5rem;
+            color: #1f2937;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .step-number {
+            background: #0073ea;
+            color: white;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 1rem;
+        }
+        .section p {
+            color: #4b5563;
+            margin-bottom: 15px;
+        }
+        .section ul {
+            margin-left: 20px;
+            color: #4b5563;
+        }
+        .section li {
+            margin-bottom: 10px;
+        }
+        .tip {
+            background: #e0f2fe;
+            border-left: 4px solid #0073ea;
+            padding: 15px 20px;
+            border-radius: 0 8px 8px 0;
+            margin-top: 15px;
+        }
+        .tip strong {
+            color: #0073ea;
+        }
+        .supported-columns {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 10px;
+            margin-top: 15px;
+        }
+        .column-badge {
+            background: #f3f4f6;
+            padding: 8px 15px;
+            border-radius: 20px;
+            text-align: center;
+            font-size: 0.9rem;
+            color: #374151;
+        }
+        .faq-item {
+            border-bottom: 1px solid #e5e7eb;
+            padding: 20px 0;
+        }
+        .faq-item:last-child {
+            border-bottom: none;
+        }
+        .faq-item h3 {
+            color: #1f2937;
+            margin-bottom: 10px;
+        }
+        .faq-item p {
+            margin-bottom: 0;
+        }
+        .contact {
+            text-align: center;
+            padding: 40px;
+            background: linear-gradient(135deg, #0073ea 0%, #00c875 100%);
+            color: white;
+            border-radius: 12px;
+        }
+        .contact h2 {
+            color: white;
+            justify-content: center;
+        }
+        .contact p {
+            color: rgba(255,255,255,0.9);
+        }
+        .contact a {
+            color: white;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Bulk Update Pro</h1>
+        <p>Learn how to update multiple items in seconds</p>
+    </div>
+
+    <div class="section">
+        <h2>Getting Started</h2>
+        <p>Bulk Update Pro is a Board View that allows you to update multiple items at once. After installing the app, you need to add it to your board:</p>
+        <ol style="margin-left: 20px; color: #4b5563;">
+            <li>Open any board in monday.com</li>
+            <li>Click the <strong>+</strong> button next to your existing views (Main Table, Kanban, etc.)</li>
+            <li>Select <strong>Apps</strong> from the menu</li>
+            <li>Find and click <strong>Bulk Update Pro</strong></li>
+        </ol>
+        <div class="tip">
+            <strong>Tip:</strong> You can add Bulk Update Pro to multiple boards. Each board will have its own instance.
+        </div>
+    </div>
+
+    <div class="section">
+        <h2><span class="step-number">1</span> Select Items</h2>
+        <p>The first step is to select which items you want to update. You have several options:</p>
+        <ul>
+            <li><strong>Select All:</strong> Click the "Select all" checkbox to select every item on the board</li>
+            <li><strong>Individual Selection:</strong> Click on specific items to select them one by one</li>
+            <li><strong>Search:</strong> Use the search box to filter items by name</li>
+            <li><strong>Filter by Column:</strong> Use the column filter dropdown to show only items with specific values</li>
+        </ul>
+        <div class="tip">
+            <strong>Tip:</strong> The item count shows how many items you've selected. You can select parent items and subitems.
+        </div>
+    </div>
+
+    <div class="section">
+        <h2><span class="step-number">2</span> Choose Column & Value</h2>
+        <p>After selecting items, click <strong>Next</strong> to choose what to update:</p>
+        <ul>
+            <li><strong>Select Column:</strong> Choose which column you want to update from the dropdown</li>
+            <li><strong>Set New Value:</strong> Enter or select the new value for that column</li>
+        </ul>
+        <p>Supported column types:</p>
+        <div class="supported-columns">
+            <span class="column-badge">Status</span>
+            <span class="column-badge">Date</span>
+            <span class="column-badge">Text</span>
+            <span class="column-badge">Numbers</span>
+            <span class="column-badge">People</span>
+            <span class="column-badge">Dropdown</span>
+            <span class="column-badge">Email</span>
+            <span class="column-badge">Phone</span>
+            <span class="column-badge">Rating</span>
+            <span class="column-badge">Checkbox</span>
+            <span class="column-badge">Country</span>
+            <span class="column-badge">Timeline</span>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2><span class="step-number">3</span> Review & Confirm</h2>
+        <p>Before applying changes, you'll see a preview of all updates:</p>
+        <ul>
+            <li>Review the list of items that will be updated</li>
+            <li>Verify the column and new value are correct</li>
+            <li>Click <strong>Apply Changes</strong> to execute the bulk update</li>
+        </ul>
+        <div class="tip">
+            <strong>Tip:</strong> You can go back to previous steps if you need to make adjustments before confirming.
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>Frequently Asked Questions</h2>
+
+        <div class="faq-item">
+            <h3>How many items can I update at once?</h3>
+            <p>There's no hard limit. Bulk Update Pro can handle hundreds of items. For very large boards, updates are processed in batches to ensure reliability.</p>
+        </div>
+
+        <div class="faq-item">
+            <h3>Can I undo a bulk update?</h3>
+            <p>Bulk Update Pro doesn't have a built-in undo feature. We recommend using the preview step to carefully review changes before applying them. For critical boards, consider using monday.com's activity log to track changes.</p>
+        </div>
+
+        <div class="faq-item">
+            <h3>Does it work with subitems?</h3>
+            <p>Yes! Bulk Update Pro displays both parent items and subitems. You can select and update them together or separately.</p>
+        </div>
+
+        <div class="faq-item">
+            <h3>Why can't I see certain columns?</h3>
+            <p>Some column types like Formula, Mirror, and Auto-number are read-only and cannot be updated. Only editable columns appear in the column selector.</p>
+        </div>
+
+        <div class="faq-item">
+            <h3>Is my data safe?</h3>
+            <p>Yes. Bulk Update Pro operates entirely within monday.com's infrastructure. We don't store any of your data on external servers. All updates are made directly through monday.com's official API.</p>
+        </div>
+    </div>
+
+    <div class="section contact">
+        <h2>Need Help?</h2>
+        <p>If you have questions or run into any issues, we're here to help!</p>
+        <p style="margin-top: 15px;">
+            <a href="mailto:leongaelllc@gmail.com">leongaelllc@gmail.com</a>
+        </p>
+    </div>
+
+    <p style="text-align: center; color: #9ca3af; margin-top: 40px; font-size: 0.9rem;">
+        Bulk Update Pro is developed by Leon Gael LLC
+    </p>
+</body>
+</html>
