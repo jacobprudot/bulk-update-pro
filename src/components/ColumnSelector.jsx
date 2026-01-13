@@ -212,8 +212,7 @@ const ColumnSelector = ({ columns, selectedColumn, value, onChange, onColumnChan
       case 'date':
         return (
           <TextField
-            title="Date (YYYY-MM-DD)"
-            placeholder="2024-01-31"
+            title="Select date"
             value={value}
             onChange={onChange}
             type="date"

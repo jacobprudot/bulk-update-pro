@@ -250,13 +250,13 @@ function App() {
       <Flex direction="Column" gap={Flex.gaps.LARGE}>
         {/* Header */}
         <Box>
-          <Flex align="Center" gap={Flex.gaps.MEDIUM}>
+          <Flex align="Center" justify="Center" gap={Flex.gaps.MEDIUM}>
             <img
               src={logoImg}
               alt="Bulk Update Pro"
               style={{
-                width: '48px',
-                height: '48px',
+                width: '126px',
+                height: '126px',
                 objectFit: 'contain'
               }}
             />
